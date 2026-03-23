@@ -15,8 +15,23 @@ import (
 type ToolWithStructuredContentOutput[ToolInput, ToolOutput any] struct {
 	tool[ToolInput, ToolOutput]
 	structuredContentHandler HandlerWithStructuredContentOutput[ToolInput, ToolOutput]
+	textContentExtractor     func(ToolOutput) string
 }
 type HandlerWithStructuredContentOutput[ToolInput, ToolOutput any] func(context.Context, entities.Logger, ToolInput) (ToolOutput, error)
+
+func NewToolWithStructuredAndTextContent[ToolInput, ToolOutput any](
+	name string,
+	title string,
+	description string,
+	annotations AnnotationProvider,
+	loggerFactory LoggerFactory,
+	handler func(context.Context, entities.Logger, ToolInput) (ToolOutput, error),
+	textContentExtractor func(ToolOutput) string,
+) ToolWithStructuredContentOutput[ToolInput, ToolOutput] {
+	t := NewToolWithStructuredContent(name, title, description, annotations, loggerFactory, handler)
+	t.textContentExtractor = textContentExtractor
+	return t
+}
 
 func NewToolWithStructuredContent[ToolInput, ToolOutput any](
 	name string,
@@ -94,6 +109,11 @@ func (t ToolWithStructuredContentOutput[ToolInput, ToolOutput]) Handler() mcp.To
 		if err != nil {
 			logger.WithError(err).Warn("Structured handler returned an error")
 			return nil, toolOutputZeroValue, err
+		}
+		if t.textContentExtractor != nil {
+			text := t.textContentExtractor(toolOutput)
+			result := &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: text}}}
+			return result, toolOutput, nil
 		}
 		return nil, toolOutput, nil
 	}

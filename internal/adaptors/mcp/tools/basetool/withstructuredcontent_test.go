@@ -312,6 +312,96 @@ func TestToolWithStructuredContent_Annotations(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, tool.Annotations(), "Tool should have destructive annotations")
 }
 
+func TestToolWithStructuredAndTextContent_Handler_IncludesLogAsTextContent(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	expectedSession := &mcp.ServerSession{}
+	expectedInput := TestInput{Message: "test message"}
+	expectedOutput := TestOutput{Result: "processed: test message"}
+	mockSessionLogger := testutils.NewInspectableLogger()
+
+	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
+		return TestOutput{Result: "processed: " + input.Message}, nil
+	}
+	extractor := func(output TestOutput) string { return output.Result }
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(expectedSession).
+		Return(mockSessionLogger, nil).
+		Once()
+
+	tool := basetool.NewToolWithStructuredAndTextContent(
+		"test-tool",
+		"Test Tool",
+		"A test tool",
+		annotations.NewReadOnlyAnnotations(),
+		mockLoggerFactory,
+		handler,
+		extractor,
+	)
+
+	req := &mcp.CallToolRequest{
+		Session: expectedSession,
+	}
+
+	// Act
+	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, expectedOutput, output, "Structured output should match")
+	require.NotNil(t, result, "Result should not be nil when text extractor is set")
+	require.Len(t, result.Content, 1, "Result should have one text content item")
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	require.True(t, ok, "Content should be TextContent")
+	assert.Equal(t, expectedOutput.Result, textContent.Text, "Text content should be the extracted value")
+}
+
+func TestToolWithStructuredAndTextContent_Handler_Error_ReturnsNilResult(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &mocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	expectedSession := &mcp.ServerSession{}
+	expectedInput := TestInput{Message: "test message"}
+	expectedError := assert.AnError
+	mockSessionLogger := testutils.NewInspectableLogger()
+
+	handler := func(ctx context.Context, logger entities.Logger, input TestInput) (TestOutput, error) {
+		return TestOutput{}, expectedError
+	}
+	extractor := func(output TestOutput) string { return output.Result }
+
+	mockLoggerFactory.EXPECT().
+		NewMCPSessionLogger(expectedSession).
+		Return(mockSessionLogger, nil).
+		Once()
+
+	tool := basetool.NewToolWithStructuredAndTextContent(
+		"test-tool",
+		"Test Tool",
+		"A test tool",
+		annotations.NewReadOnlyAnnotations(),
+		mockLoggerFactory,
+		handler,
+		extractor,
+	)
+
+	req := &mcp.CallToolRequest{
+		Session: expectedSession,
+	}
+
+	// Act
+	result, output, err := tool.Handler()(t.Context(), req, expectedInput)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+	assert.Nil(t, result, "Result should be nil when error occurs")
+	assert.Empty(t, output)
+}
+
 func TestToolWithStructuredContentOutput_AddToServer_NilAnnotationInterface(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &mocks.MockLoggerFactory{}

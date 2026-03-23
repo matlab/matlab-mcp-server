@@ -13,11 +13,13 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	evalmatlabmultisession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
+	runmatlabbuildmultisession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/runmatlabbuild"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabsinglesession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
+	runmatlabbuildsinglesession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabbuild"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
@@ -44,6 +46,8 @@ func TestNew_HappyPath(t *testing.T) {
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -60,6 +64,8 @@ func TestNew_HappyPath(t *testing.T) {
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -88,6 +94,8 @@ func TestConfigurator_GetToolsToAdd_MultipleMATLABSession_HappyPath(t *testing.T
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -118,6 +126,8 @@ func TestConfigurator_GetToolsToAdd_MultipleMATLABSession_HappyPath(t *testing.T
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -132,6 +142,7 @@ func TestConfigurator_GetToolsToAdd_MultipleMATLABSession_HappyPath(t *testing.T
 		startMATLABSessionTool,
 		stopMATLABSessionTool,
 		evalInMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 	}, "GetToolsToAdd should return all the injected tools for multi session")
 }
 
@@ -152,6 +163,8 @@ func TestConfigurator_GetToolsToAdd_ConfigError(t *testing.T) {
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -179,6 +192,8 @@ func TestConfigurator_GetToolsToAdd_ConfigError(t *testing.T) {
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -211,6 +226,8 @@ func TestConfigurator_GetToolsToAdd_SingleMATLABSession_HappyPath(t *testing.T) 
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -241,6 +258,8 @@ func TestConfigurator_GetToolsToAdd_SingleMATLABSession_HappyPath(t *testing.T) 
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -256,6 +275,7 @@ func TestConfigurator_GetToolsToAdd_SingleMATLABSession_HappyPath(t *testing.T) 
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
 		detectMATLABToolboxesInSingleSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
 	}, "GetToolsToAdd should all injected tools for single session")
 }
 
@@ -276,6 +296,8 @@ func TestConfigurator_GetResourcesToAdd_HappyPath(t *testing.T) {
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -296,6 +318,8 @@ func TestConfigurator_GetResourcesToAdd_HappyPath(t *testing.T) {
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -324,6 +348,8 @@ func TestConfigurator_GetToolsToAdd_MATLABFeatureDisabled(t *testing.T) {
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -344,6 +370,8 @@ func TestConfigurator_GetToolsToAdd_MATLABFeatureDisabled(t *testing.T) {
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)
@@ -373,6 +401,8 @@ func TestConfigurator_GetResourcesToAdd_MATLABFeatureDisabled(t *testing.T) {
 	detectMATLABToolboxesInSingleSessionTool := &detectmatlabtoolboxes.Tool{}
 	runMATLABFileInGlobalMATLABSessionTool := &runmatlabfile.Tool{}
 	runMATLABTestFileInGlobalMATLABSessionTool := &runmatlabtestfile.Tool{}
+	runMATLABBuildInGlobalMATLABSessionTool := &runmatlabbuildsinglesession.Tool{}
+	runMATLABBuildInMATLABSessionTool := &runmatlabbuildmultisession.Tool{}
 	codingGuidelinesResource := &codingguidelines.Resource{}
 	plaintextlivecodegenerationResource := &plaintextlivecodegeneration.Resource{}
 
@@ -393,6 +423,8 @@ func TestConfigurator_GetResourcesToAdd_MATLABFeatureDisabled(t *testing.T) {
 		detectMATLABToolboxesInSingleSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool,
 		codingGuidelinesResource,
 		plaintextlivecodegenerationResource,
 	)

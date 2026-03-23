@@ -11,11 +11,13 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	evalmatlabcodemultisession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
+	runmatlabbuildmultisession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/runmatlabbuild"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabcodesinglesession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
+	runmatlabbuildsinglesession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabbuild"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
@@ -45,6 +47,10 @@ type Configurator struct {
 	detectMATLABToolboxesInGlobalMATLABSessionTool tools.Tool
 	runMATLABFileInGlobalMATLABSessionTool         tools.Tool
 	runMATLABTestFileInGlobalMATLABSessionTool     tools.Tool
+	runMATLABBuildInGlobalMATLABSessionTool        tools.Tool
+
+	// Multi Session build tool
+	runMATLABBuildInMATLABSessionTool tools.Tool
 
 	// Resources
 	codingGuidelinesResource            resources.Resource
@@ -66,6 +72,8 @@ func New(
 	detectMATLABToolboxesInGlobalMATLABSessionTool *detectmatlabtoolboxes.Tool,
 	runMATLABFileInGlobalMATLABSessionTool *runmatlabfile.Tool,
 	runMATLABTestFileInGlobalMATLABSessionTool *runmatlabtestfile.Tool,
+	runMATLABBuildInGlobalMATLABSessionTool *runmatlabbuildsinglesession.Tool,
+	runMATLABBuildInMATLABSessionTool *runmatlabbuildmultisession.Tool,
 
 	codingGuidelinesResource *codingguidelines.Resource,
 	plaintextlivecodegenerationResource *plaintextlivecodegeneration.Resource,
@@ -85,6 +93,8 @@ func New(
 		detectMATLABToolboxesInGlobalMATLABSessionTool: detectMATLABToolboxesInGlobalMATLABSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool:         runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool:     runMATLABTestFileInGlobalMATLABSessionTool,
+		runMATLABBuildInGlobalMATLABSessionTool:        runMATLABBuildInGlobalMATLABSessionTool,
+		runMATLABBuildInMATLABSessionTool:              runMATLABBuildInMATLABSessionTool,
 
 		codingGuidelinesResource:            codingGuidelinesResource,
 		plaintextlivecodegenerationResource: plaintextlivecodegenerationResource,
@@ -108,6 +118,7 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 			c.detectMATLABToolboxesInGlobalMATLABSessionTool,
 			c.runMATLABFileInGlobalMATLABSessionTool,
 			c.runMATLABTestFileInGlobalMATLABSessionTool,
+			c.runMATLABBuildInGlobalMATLABSessionTool,
 		}, nil
 	}
 
@@ -116,6 +127,7 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 		c.startMATLABSessionTool,
 		c.stopMATLABSessionTool,
 		c.evalInMATLABSessionTool,
+		c.runMATLABBuildInMATLABSessionTool,
 	}, nil
 }
 

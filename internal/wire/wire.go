@@ -45,12 +45,14 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/basetool"
 	evalmatlabcodemultisessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabstool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
+	runmatlabbuildmultisessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/runmatlabbuild"
 	startmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	stopmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	checkmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
 	detectmatlabtoolboxessinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
+	runmatlabbuildsinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabbuild"
 	runmatlabtestfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
@@ -64,6 +66,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabbuild"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/startmatlabsession"
@@ -215,6 +218,15 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		runmatlabtestfile.New,
 		wire.Bind(new(runmatlabtestfile.PathValidator), new(*pathvalidator.PathValidator)),
+
+		runmatlabbuildsinglesessiontool.New,
+		wire.Bind(new(runmatlabbuildsinglesessiontool.Usecase), new(*runmatlabbuild.Usecase)),
+
+		runmatlabbuildmultisessiontool.New,
+		wire.Bind(new(runmatlabbuildmultisessiontool.Usecase), new(*runmatlabbuild.Usecase)),
+
+		runmatlabbuild.New,
+		wire.Bind(new(runmatlabbuild.PathValidator), new(*pathvalidator.PathValidator)),
 
 		// Resources
 		wire.Bind(new(baseresource.LoggerFactory), new(*logger.Factory)),
