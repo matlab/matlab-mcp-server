@@ -2,6 +2,7 @@
 
 Run MATLAB® using AI applications with the official MATLAB MCP Server from MathWorks®. The MATLAB MCP Core Server allows your AI applications to:
 
+- Install MATLAB and toolboxes without requiring a pre-existing MATLAB installation.
 - Start and quit MATLAB.
 - Write and run MATLAB code.
 - Assess your MATLAB code for style and correctness.
@@ -20,7 +21,7 @@ Run MATLAB® using AI applications with the official MATLAB MCP Server from Math
 
 ## Setup
 
-1. Install [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) 2020b or later and add it to the system PATH.
+1. Install [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) 2020b or later and add it to the system PATH. Alternatively, you can use the [`install_matlab`](#tools) tool to install MATLAB directly from your AI application after setting up the server.
 1. To set up the MATLAB MCP Core Server for Claude Desktop, skip to the instructions for [Claude Desktop](#claude-desktop). To set up the server for other applications, follow these instructions:
    
    - For Windows or Linux, [**Download the Latest Release**](https://github.com/matlab/matlab-mcp-core-server/releases/latest). (Alternatively, you can **build from source**: install [Go](https://go.dev/doc/install) and build the binary using `go install github.com/matlab/matlab-mcp-core-server/cmd/matlab-mcp-core-server@latest`).
@@ -109,8 +110,15 @@ Customize the behavior of the server by providing arguments in the `args` array 
 
 ## Tools
 
+1. `install_matlab`
+    - Downloads and installs MATLAB and/or MATLAB toolboxes using the MATLAB Package Manager (mpm). This tool does not require MATLAB to already be installed. It downloads the mpm CLI and uses it to install the specified products.
+    - Inputs:
+        - `release` (string): The MATLAB release to install (e.g., `R2025a` or `R2024b`).
+        - `products` (string[]): List of product names to install. Use underscores for spaces (e.g., `MATLAB`, `Signal_Processing_Toolbox`, `Deep_Learning_Toolbox`). To install MATLAB itself, include `MATLAB` in the list.
+        - `destination` (string, optional): The installation directory. If not specified, mpm uses its default location.
+
 1. `detect_matlab_toolboxes`
-    - Returns information about installed MATLAB and toolboxes, including version numbers.  
+    - Returns information about installed MATLAB and toolboxes, including version numbers.
 
 1. `check_matlab_code`
     - Performs static code analysis on a MATLAB script. Returns warnings about coding style, potential errors, deprecated functions, performance issues, and best practice violations. This is a non-destructive, read-only operation that helps identify code quality issues without executing the script.

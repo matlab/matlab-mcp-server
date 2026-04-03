@@ -45,6 +45,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/basetool"
+	installmatlabtool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/installmatlab"
 	evalmatlabcodemultisessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabstool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
 	startmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
@@ -67,8 +68,10 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/iofacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/registryfacade"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mpm"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/installmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
@@ -261,6 +264,19 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		runmatlabtestfile.New,
 		wire.Bind(new(runmatlabtestfile.PathValidator), new(*pathvalidator.PathValidator)),
+
+		// Install MATLAB tool (session-independent)
+		installmatlabtool.New,
+		wire.Bind(new(installmatlabtool.Usecase), new(*installmatlab.Usecase)),
+
+		installmatlab.New,
+		wire.Bind(new(installmatlab.FileDownloader), new(*mpm.Downloader)),
+		wire.Bind(new(installmatlab.CommandRunner), new(*mpm.Runner)),
+		wire.Bind(new(installmatlab.OSLayer), new(*mpm.OSLayer)),
+
+		mpm.NewDownloader,
+		mpm.NewRunner,
+		mpm.NewOSLayer,
 
 		// Resources
 		wire.Bind(new(baseresource.LoggerFactory), new(*logger.Factory)),

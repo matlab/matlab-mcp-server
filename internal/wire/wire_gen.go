@@ -44,6 +44,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/rootstore"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
+	installmatlab2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/installmatlab"
 	evalmatlabcode2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	listavailablematlabs2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
 	startmatlabsession2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
@@ -53,6 +54,7 @@ import (
 	evalmatlabcode3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mpm"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/telemetry"
@@ -69,6 +71,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/installmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabtestfile"
@@ -152,9 +155,14 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	runmatlabfileTool := runmatlabfile2.New(loggerFactory, factory, runmatlabfileUsecase, globalMATLAB)
 	runmatlabtestfileUsecase := runmatlabtestfile.New(pathValidator)
 	runmatlabtestfileTool := runmatlabtestfile2.New(loggerFactory, runmatlabtestfileUsecase, globalMATLAB)
+	downloader := mpm.NewDownloader()
+	runner := mpm.NewRunner()
+	osLayer := mpm.NewOSLayer()
+	installmatlabUsecase := installmatlab.New(downloader, runner, osLayer)
+	installmatlabTool := installmatlab2.New(loggerFactory, installmatlabUsecase)
 	resource := codingguidelines.New(loggerFactory)
 	plaintextlivecodegenerationResource := plaintextlivecodegeneration.New(loggerFactory)
-	configuratorConfigurator := configurator.New(factory, serverDefinition, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
+	configuratorConfigurator := configurator.New(factory, serverDefinition, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, installmatlabTool, resource, plaintextlivecodegenerationResource)
 	serverServer := server3.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
 	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory)
 	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory)

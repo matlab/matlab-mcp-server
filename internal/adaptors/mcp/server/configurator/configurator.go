@@ -9,6 +9,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/installmatlab"
 	evalmatlabcodemultisession "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
@@ -46,6 +47,9 @@ type Configurator struct {
 	runMATLABFileInGlobalMATLABSessionTool         tools.Tool
 	runMATLABTestFileInGlobalMATLABSessionTool     tools.Tool
 
+	// Session-independent tools
+	installMATLABTool tools.Tool
+
 	// Resources
 	codingGuidelinesResource            resources.Resource
 	plaintextlivecodegenerationResource resources.Resource
@@ -67,6 +71,8 @@ func New(
 	runMATLABFileInGlobalMATLABSessionTool *runmatlabfile.Tool,
 	runMATLABTestFileInGlobalMATLABSessionTool *runmatlabtestfile.Tool,
 
+	installMATLABTool *installmatlab.Tool,
+
 	codingGuidelinesResource *codingguidelines.Resource,
 	plaintextlivecodegenerationResource *plaintextlivecodegeneration.Resource,
 ) *Configurator {
@@ -85,6 +91,8 @@ func New(
 		detectMATLABToolboxesInGlobalMATLABSessionTool: detectMATLABToolboxesInGlobalMATLABSessionTool,
 		runMATLABFileInGlobalMATLABSessionTool:         runMATLABFileInGlobalMATLABSessionTool,
 		runMATLABTestFileInGlobalMATLABSessionTool:     runMATLABTestFileInGlobalMATLABSessionTool,
+
+		installMATLABTool: installMATLABTool,
 
 		codingGuidelinesResource:            codingGuidelinesResource,
 		plaintextlivecodegenerationResource: plaintextlivecodegenerationResource,
@@ -108,6 +116,7 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 			c.detectMATLABToolboxesInGlobalMATLABSessionTool,
 			c.runMATLABFileInGlobalMATLABSessionTool,
 			c.runMATLABTestFileInGlobalMATLABSessionTool,
+			c.installMATLABTool,
 		}, nil
 	}
 
@@ -116,6 +125,7 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 		c.startMATLABSessionTool,
 		c.stopMATLABSessionTool,
 		c.evalInMATLABSessionTool,
+		c.installMATLABTool,
 	}, nil
 }
 
