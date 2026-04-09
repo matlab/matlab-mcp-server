@@ -12,6 +12,7 @@ tool (
 )
 
 require (
+	github.com/Microsoft/go-winio v0.4.0
 	github.com/google/jsonschema-go v0.4.2
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.7.0

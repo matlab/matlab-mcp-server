@@ -10,6 +10,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
@@ -65,6 +68,13 @@ func (c *Client) Connect(socketPath string) error {
 		With("socketPath", socketPath).
 		Debug("Connecting to socket")
 
+	// Check if this is a Windows named pipe path
+	if isNamedPipePath(socketPath) {
+		c.logger.Debug("Using Windows named pipe, skipping file check")
+		c.httpClient = c.httpClientFactory.NewClientOverUDS(socketPath)
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), c.socketWaitTimeout)
 	defer cancel()
 
@@ -86,6 +96,14 @@ func (c *Client) Connect(socketPath string) error {
 	}, retry.NewLinearRetryStrategy(c.socketRetryInterval))
 
 	if err != nil {
+		// On Windows, if socket file is not found, try named pipe as fallback
+		if errors.Is(err, context.DeadlineExceeded) && runtime.GOOS == "windows" {
+			pipePath := socketPathToNamedPipe(socketPath)
+			c.logger.With("pipePath", pipePath).Debug("Socket file not found, trying named pipe fallback")
+			c.httpClient = c.httpClientFactory.NewClientOverUDS(pipePath)
+			return nil
+		}
+
 		if errors.Is(err, context.DeadlineExceeded) {
 			return ErrTimeoutWaitingForSocketFile
 		}
@@ -95,6 +113,11 @@ func (c *Client) Connect(socketPath string) error {
 
 	c.httpClient = httpClient
 	return nil
+}
+
+// isNamedPipePath checks if the path is a Windows named pipe path
+func isNamedPipePath(path string) bool {
+	return len(path) >= 9 && path[:9] == `\\.\pipe\`
 }
 
 func (c *Client) SendProcessPID(pid int) (messages.ProcessToKillResponse, error) {
@@ -179,4 +202,15 @@ func (c *Client) Close() error {
 	c.logger.Info("Client closing")
 	c.httpClient.CloseIdleConnections()
 	return nil
+}
+
+// socketPathToNamedPipe converts a Unix socket path to a named pipe path
+func socketPathToNamedPipe(socketPath string) string {
+	// Extract the ID from the socket path (e.g., "watchdog-123.sock" -> "123")
+	base := filepath.Base(socketPath)
+	
+	// Remove .sock extension if present
+	base = strings.TrimSuffix(base, ".sock")
+	
+	return `\\.\pipe\matlab-mcp-` + base
 }
