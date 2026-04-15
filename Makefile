@@ -126,6 +126,19 @@ ALL_BIN_DIR := $(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/all
 MLTBX_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/mltbx
 
 build: build-for-windows build-for-glnxa64 build-for-maci64 build-for-maca64
+ifeq ($(OS),Windows_NT)
+	@New-Item -ItemType Directory -Force -Path "$(ALL_BIN_DIR)" | Out-Null
+	@Copy-Item "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
+	@Copy-Item "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
+	@Copy-Item "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
+	@Copy-Item "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
+else
+	@mkdir -p "$(ALL_BIN_DIR)"
+	@cp "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
+	@cp "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
+	@cp "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
+	@cp "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
+endif
 
 build-for-windows:
 ifeq ($(OS),Windows_NT)
@@ -153,21 +166,6 @@ ifeq ($(OS),Windows_NT)
 	$$env:GOOS='darwin'; $$env:GOARCH='arm64'; $$env:CGO_ENABLED='0'; go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o $(MACA64_BIN_DIR)/matlab-mcp-core-server ./cmd/matlab-mcp-core-server
 else
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o "$(MACA64_BIN_DIR)/matlab-mcp-core-server" ./cmd/matlab-mcp-core-server
-endif
-
-build-all:
-ifeq ($(OS),Windows_NT)
-	@New-Item -ItemType Directory -Force -Path "$(ALL_BIN_DIR)" | Out-Null
-	@Copy-Item "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
-	@Copy-Item "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
-	@Copy-Item "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
-	@Copy-Item "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
-else
-	@mkdir -p "$(ALL_BIN_DIR)"
-	@cp "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
-	@cp "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
-	@cp "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
-	@cp "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
 endif
 
 build-matlab-addon:
@@ -319,7 +317,7 @@ mcpb-clean:
 	@echo "Removed $(MCPB_STAGING_DIR) and $(dir $(MCPB_GEN_BIN))"
 
 # Development workflow: build, copy to all/, and pack
-mcpb-dev: mcpb-clean build build-all mcpb
+mcpb-dev: mcpb-clean build mcpb
 
 mcpb-validate:
 ifeq ($(OS),Windows_NT)
