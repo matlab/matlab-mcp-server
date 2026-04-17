@@ -96,6 +96,19 @@ endif
 
 # Resources
 
+MATLAB_MCP_EMBEDDED_SRC := $(CURDIR)/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory/matlabfiles/assets/+matlab_mcp
+MATLAB_MCP_TOOLKIT_DST := $(CURDIR)/matlab/matlab_mcp_toolkit/mcp/+matlab_mcp
+
+sync-matlab-mcp:
+ifeq ($(OS),Windows_NT)
+	@New-Item -ItemType Directory -Force -Path "$(MATLAB_MCP_TOOLKIT_DST)" | Out-Null
+	@Copy-Item "$(MATLAB_MCP_EMBEDDED_SRC)/*.m" "$(MATLAB_MCP_TOOLKIT_DST)/"
+else
+	@mkdir -p "$(MATLAB_MCP_TOOLKIT_DST)"
+	@cp "$(MATLAB_MCP_EMBEDDED_SRC)"/*.m "$(MATLAB_MCP_TOOLKIT_DST)/"
+endif
+	@echo "Synced embedded MATLAB files to toolkit"
+
 CODING_GUIDELINES_URL := https://raw.githubusercontent.com/matlab/rules/main/matlab-coding-standards.md
 CODING_GUIDELINES_PATH := $(CURDIR)/internal/adaptors/mcp/resources/codingguidelines/assets/codingguidelines.md
 
@@ -168,7 +181,7 @@ else
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o "$(MACA64_BIN_DIR)/matlab-mcp-core-server" ./cmd/matlab-mcp-core-server
 endif
 
-build-matlab-addon:
+build-matlab-addon: sync-matlab-mcp
 ifeq ($(OS),Windows_NT)
 	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_DIR='$(MLTBX_DIR)'; matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean package;"
 else
