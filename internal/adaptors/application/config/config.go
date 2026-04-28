@@ -15,10 +15,10 @@ import (
 const redactedValue = "[REDACTED]"
 
 type validatedArguments struct {
-	versionMode            bool
-	helpMode               bool
-	watchdogMode           bool
-	installMATLABAddOnMode bool
+	versionMode     bool
+	helpMode        bool
+	watchdogMode    bool
+	setupMATLABMode bool
 
 	baseDirectory    string
 	serverInstanceID string
@@ -116,8 +116,8 @@ func (c *config) WatchdogMode() bool {
 	return c.watchdogMode
 }
 
-func (c *config) InstallMATLABAddOnMode() bool {
-	return c.installMATLABAddOnMode
+func (c *config) SetupMATLABMode() bool {
+	return c.setupMATLABMode
 }
 
 func (c *config) UseSingleMATLABSession() bool {
@@ -247,7 +247,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, err
 	}
 
-	installMATLABAddOnMode, err := get(rawCfg, defaultparameters.InstallMATLABAddOnMode())
+	setupMATLABMode, err := get(rawCfg, defaultparameters.SetupMATLABMode())
 	if err != nil {
 		return validatedArguments{}, err
 	}
@@ -387,10 +387,10 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 	}
 
 	args := validatedArguments{
-		versionMode:            versionMode,
-		helpMode:               helpMode,
-		watchdogMode:           watchdogMode,
-		installMATLABAddOnMode: installMATLABAddOnMode,
+		versionMode:     versionMode,
+		helpMode:        helpMode,
+		watchdogMode:    watchdogMode,
+		setupMATLABMode: setupMATLABMode,
 
 		baseDirectory:    baseDirectory,
 		serverInstanceID: serverInstanceID,
@@ -430,7 +430,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 func checkArgumentCompatibilityAndAdjustDefaults(args validatedArguments, specifiedParameters []string) (validatedArguments, messages.Error) {
 	// If installing the MATLAB Add-On, and displayMode isn't specified
 	// it's a better user experience to not flash the desktop
-	if args.installMATLABAddOnMode && !slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
+	if args.setupMATLABMode && !slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
 		args.displayMode = entities.DisplayModeNoDesktop
 	}
 

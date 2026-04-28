@@ -220,18 +220,18 @@ func (s *WorkflowTestSuite) TestParallelExperimentationWorkflow() {
 	s.Require().NoError(err, "should stop session 2")
 }
 
-// TestInstallMATLABAddOnWorkflow verifies the --install-matlab-addon flag
+// TestInstallMATLABAddOnWorkflow verifies the --setup-matlab flag
 // correctly installs the MATLAB MCP Core Server Toolbox add-on.
 //
 // Scenario: User installing the MATLAB add-on
 // - Ensures the add-on is not installed (uninstalls if present)
-// - Runs the MCP server with --install-matlab-addon
+// - Runs the MCP server with --setup-matlab
 // - Verifies the add-on is installed
 // - Always cleans up by uninstalling the add-on
 //
 // CLI flags tested:
-// - --install-matlab-addon (one-shot add-on installation mode)
-func (s *WorkflowTestSuite) TestInstallMATLABAddOnWorkflow() {
+// - --setup-matlab (one-shot add-on installation mode)
+func (s *WorkflowTestSuite) TestSetupMATLABWorkflow() {
 	ctx := s.T().Context()
 	s.T().Setenv("PATH", s.pathEnvWithMATLAB)
 
@@ -269,17 +269,17 @@ func (s *WorkflowTestSuite) TestInstallMATLABAddOnWorkflow() {
 	output := runMATLAB(checkInstalledCode, "should check add-on installation status")
 	s.Contains(output, "installed=0", "add-on should not be installed before test")
 
-	// Step 2: Run MCP server with --install-matlab-addon
+	// Step 2: Run MCP server with --setup-matlab
 	installCmd := exec.CommandContext(ctx, s.mcpServerPath, //nolint:gosec // Trusted path in tests
-		"--install-matlab-addon",
+		"--setup-matlab",
 	)
 	installCmd.Env = s.defaultEnv
 	installOutput, err := installCmd.CombinedOutput()
-	s.Require().NoError(err, "install-matlab-addon should succeed:\n%s", string(installOutput))
+	s.Require().NoError(err, "setup-matlab should succeed:\n%s", string(installOutput))
 
 	// Step 3: Verify the add-on is installed
 	output = runMATLAB(checkInstalledCode, "should check add-on installation status")
-	s.Contains(output, "installed=1", "add-on should be installed after running --install-matlab-addon")
+	s.Contains(output, "installed=1", "add-on should be installed after running --setup-matlab")
 }
 
 // TestWorkflowSuite runs the workflow test suite

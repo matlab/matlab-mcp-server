@@ -455,50 +455,6 @@ func (_c *MockConfig_InitializeMATLABOnStartup_Call) RunAndReturn(run func() boo
 	return _c
 }
 
-// InstallMATLABAddOnMode provides a mock function for the type MockConfig
-func (_mock *MockConfig) InstallMATLABAddOnMode() bool {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for InstallMATLABAddOnMode")
-	}
-
-	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func() bool); ok {
-		r0 = returnFunc()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	return r0
-}
-
-// MockConfig_InstallMATLABAddOnMode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InstallMATLABAddOnMode'
-type MockConfig_InstallMATLABAddOnMode_Call struct {
-	*mock.Call
-}
-
-// InstallMATLABAddOnMode is a helper method to define mock.On call
-func (_e *MockConfig_Expecter) InstallMATLABAddOnMode() *MockConfig_InstallMATLABAddOnMode_Call {
-	return &MockConfig_InstallMATLABAddOnMode_Call{Call: _e.mock.On("InstallMATLABAddOnMode")}
-}
-
-func (_c *MockConfig_InstallMATLABAddOnMode_Call) Run(run func()) *MockConfig_InstallMATLABAddOnMode_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockConfig_InstallMATLABAddOnMode_Call) Return(b bool) *MockConfig_InstallMATLABAddOnMode_Call {
-	_c.Call.Return(b)
-	return _c
-}
-
-func (_c *MockConfig_InstallMATLABAddOnMode_Call) RunAndReturn(run func() bool) *MockConfig_InstallMATLABAddOnMode_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // LogLevel provides a mock function for the type MockConfig
 func (_mock *MockConfig) LogLevel() entities.LogLevel {
 	ret := _mock.Called()
@@ -887,6 +843,50 @@ func (_c *MockConfig_ServerInstanceID_Call) Return(s string) *MockConfig_ServerI
 }
 
 func (_c *MockConfig_ServerInstanceID_Call) RunAndReturn(run func() string) *MockConfig_ServerInstanceID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetupMATLABMode provides a mock function for the type MockConfig
+func (_mock *MockConfig) SetupMATLABMode() bool {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetupMATLABMode")
+	}
+
+	var r0 bool
+	if returnFunc, ok := ret.Get(0).(func() bool); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	return r0
+}
+
+// MockConfig_SetupMATLABMode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetupMATLABMode'
+type MockConfig_SetupMATLABMode_Call struct {
+	*mock.Call
+}
+
+// SetupMATLABMode is a helper method to define mock.On call
+func (_e *MockConfig_Expecter) SetupMATLABMode() *MockConfig_SetupMATLABMode_Call {
+	return &MockConfig_SetupMATLABMode_Call{Call: _e.mock.On("SetupMATLABMode")}
+}
+
+func (_c *MockConfig_SetupMATLABMode_Call) Run(run func()) *MockConfig_SetupMATLABMode_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockConfig_SetupMATLABMode_Call) Return(b bool) *MockConfig_SetupMATLABMode_Call {
+	_c.Call.Return(b)
+	return _c
+}
+
+func (_c *MockConfig_SetupMATLABMode_Call) RunAndReturn(run func() bool) *MockConfig_SetupMATLABMode_Call {
 	_c.Call.Return(run)
 	return _c
 }

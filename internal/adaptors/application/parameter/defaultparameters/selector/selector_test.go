@@ -31,7 +31,7 @@ func TestSelector_DefaultParameters_DescriptionsResolvedForVisibleParameters(t *
 		messages.CLIMessages_VersionDescription: {
 			description: "Version description",
 		},
-		messages.CLIMessages_InstallMATLABAddOnDescription: {
+		messages.CLIMessages_SetupMATLABDescription: {
 			description: "Install MATLAB Add-On description",
 		},
 		messages.CLIMessages_DisableTelemetryDescription: {
@@ -140,7 +140,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 	expectedActiveStateByParameterID := map[string]bool{
 		"HelpMode":                           true,
 		"VersionMode":                        true,
-		"InstallMATLABAddOnMode":             true,
+		"SetupMATLABMode":                    true,
 		"DisableTelemetry":                   true,
 		"BaseDir":                            true,
 		"LogLevel":                           true,

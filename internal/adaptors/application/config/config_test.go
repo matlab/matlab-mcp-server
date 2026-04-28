@@ -23,7 +23,7 @@ func defaultParameters() []entities.Parameter {
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
 		defaultparameters.WatchdogMode(),
-		defaultparameters.InstallMATLABAddOnMode(),
+		defaultparameters.SetupMATLABMode(),
 
 		defaultparameters.BaseDir(),
 		defaultparameters.ServerInstanceID(),
@@ -67,7 +67,7 @@ func TestNewConfig_InvalidParameterType(t *testing.T) {
 		{key: defaultparameters.VersionMode().GetID(), invalidValue: "false", expectedType: "bool"},
 		{key: defaultparameters.HelpMode().GetID(), invalidValue: "false", expectedType: "bool"},
 		{key: defaultparameters.WatchdogMode().GetID(), invalidValue: "false", expectedType: "bool"},
-		{key: defaultparameters.InstallMATLABAddOnMode().GetID(), invalidValue: "false", expectedType: "bool"},
+		{key: defaultparameters.SetupMATLABMode().GetID(), invalidValue: "false", expectedType: "bool"},
 
 		{key: defaultparameters.BaseDir().GetID(), invalidValue: 123, expectedType: "string"},
 		{key: defaultparameters.ServerInstanceID().GetID(), invalidValue: 123, expectedType: "string"},
@@ -138,7 +138,7 @@ func TestNewConfig_MissingParameter(t *testing.T) {
 		defaultparameters.VersionMode(),
 		defaultparameters.HelpMode(),
 		defaultparameters.WatchdogMode(),
-		defaultparameters.InstallMATLABAddOnMode(),
+		defaultparameters.SetupMATLABMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.ServerInstanceID(),
 		defaultparameters.LogLevel(),
@@ -473,7 +473,7 @@ func TestConfig_ShouldShowMATLABDesktop_DefaultsToNoDesktopInInstallAddOnMode(t 
 	args := []string{programName}
 
 	parsedArgs := configDefaultParsedArgs()
-	parsedArgs[defaultparameters.InstallMATLABAddOnMode().GetID()] = true
+	parsedArgs[defaultparameters.SetupMATLABMode().GetID()] = true
 
 	mockOSLayer.EXPECT().
 		Args().
@@ -723,7 +723,7 @@ func TestConfig_RecordToLogger_HappyPath(t *testing.T) {
 		defaultparameters.VersionMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.WatchdogMode(),
-		defaultparameters.InstallMATLABAddOnMode(),
+		defaultparameters.SetupMATLABMode(),
 		defaultparameters.ServerInstanceID(),
 	}
 
@@ -897,7 +897,7 @@ func TestConfig_AsPIISafeJSONString_HappyPath(t *testing.T) {
 	piiSafeParams := []entities.Parameter{
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
-		defaultparameters.InstallMATLABAddOnMode(),
+		defaultparameters.SetupMATLABMode(),
 		defaultparameters.DisableTelemetry(),
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.LogLevel(),

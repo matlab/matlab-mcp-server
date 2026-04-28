@@ -4,7 +4,7 @@
     <message>
         <entry key="HelpDescription">Show this help text</entry>
         <entry key="VersionDescription">Display the version of this MCP server.</entry>
-        <entry key="InstallMATLABAddOnDescription">Installs the MATLAB MCP Core Server Toolbox.</entry>
+        <entry key="SetupMATLABDescription">Set up a MATLAB installation for use with the MATLAB MCP Core Server.</entry>
         <entry key="DisableTelemetryDescription">This MCP server can collect fully anonymized information about your usage of the server and send it to MathWorks. This data collection helps MathWorks improve products and is on by default. To opt out of data collection, set the argument --disable-telemetry to true.</entry>
         <entry key="UseSingleMATLABSessionDescription">By default, this MCP server starts a single MATLAB session, and stops the session when the server shuts down. To allow the server to manage multiple MATLAB sessions, set this argument to false. </entry>
         <entry key="BaseDirDescription">The folder where this MCP server stores log files. If not specified, the server uses the default temp folder of your operating system.</entry>
@@ -16,6 +16,6 @@
         <entry key="DisplayModeDescription">Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. </entry>
         <entry key="MATLABSessionModeDescription">Specify how MATLAB sessions are managed. Use 'new' (default) to launch new MATLAB sessions from a local installation, or 'existing' to connect to an already running MATLAB instance.</entry>
         <entry key="ExtensionFileDescription">Path to a JSON extension file that defines custom MCP tools. Each tool maps to a MATLAB function. If not specified, no custom tools are loaded.</entry>
-        <entry key="SuccessfullyInstalledMATLABAddOn">Successfully installed MATLAB Add-On.</entry>
+        <entry key="SuccessfullySetupMATLAB">Successfully setup MATLAB.</entry>
     </message>
 </rsccat>

@@ -12,7 +12,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/installmatlabaddon"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
@@ -180,7 +180,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory)
 	installationSteps := installationsteps.New()
 	addonManager := addonmanager.New(installationSteps)
-	mode := installmatlabaddon.New(osFacade, messageCatalog, loggerFactory, watchdog3, globalMATLAB, addonManager)
+	mode := setupmatlab.New(osFacade, messageCatalog, loggerFactory, watchdog3, globalMATLAB, addonManager)
 	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory, mode)
 	application := &Application{
 		ModeSelector:              modeSelector,

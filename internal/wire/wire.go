@@ -11,7 +11,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/installmatlabaddon"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
@@ -132,16 +132,16 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(modeselector.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(modeselector.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
 		wire.Bind(new(modeselector.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(modeselector.InstallMATLABAddOn), new(*installmatlabaddon.Mode)),
+		wire.Bind(new(modeselector.SetupMATLAB), new(*setupmatlab.Mode)),
 
-		// Install MATLAB Add-On
-		installmatlabaddon.New,
-		wire.Bind(new(installmatlabaddon.OSLayer), new(*osfacade.OsFacade)),
-		wire.Bind(new(installmatlabaddon.LoggerFactory), new(*logger.Factory)),
-		wire.Bind(new(installmatlabaddon.MessageCatalog), new(*messagecatalog.MessageCatalog)),
-		wire.Bind(new(installmatlabaddon.WatchdogClient), new(*watchdogclient.Watchdog)),
-		wire.Bind(new(installmatlabaddon.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
-		wire.Bind(new(installmatlabaddon.AddonManager), new(*addonmanager.AddonManager)),
+		// Setup MATLAB
+		setupmatlab.New,
+		wire.Bind(new(setupmatlab.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(setupmatlab.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(setupmatlab.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		wire.Bind(new(setupmatlab.WatchdogClient), new(*watchdogclient.Watchdog)),
+		wire.Bind(new(setupmatlab.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
+		wire.Bind(new(setupmatlab.AddonManager), new(*addonmanager.AddonManager)),
 
 		// Add-On Manager
 		addonmanager.New,

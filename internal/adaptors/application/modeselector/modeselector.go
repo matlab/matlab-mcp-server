@@ -47,20 +47,20 @@ type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
-type InstallMATLABAddOn interface {
+type SetupMATLAB interface {
 	StartAndWaitForCompletion(ctx context.Context) messages.Error
 }
 
 type ModeSelector struct {
-	configFactory      ConfigFactory
-	telemetryFactory   TelemetryFactory
-	watchdogProcess    WatchdogProcess
-	orchestrator       Orchestrator
-	osLayer            OSLayer
-	parser             Parser
-	lifecycleSignaler  LifecycleSignaler
-	loggerFactory      LoggerFactory
-	installMATLABAddOn InstallMATLABAddOn
+	configFactory     ConfigFactory
+	telemetryFactory  TelemetryFactory
+	watchdogProcess   WatchdogProcess
+	orchestrator      Orchestrator
+	osLayer           OSLayer
+	parser            Parser
+	lifecycleSignaler LifecycleSignaler
+	loggerFactory     LoggerFactory
+	setupMATLAB       SetupMATLAB
 }
 
 func New(
@@ -72,18 +72,18 @@ func New(
 	osLayer OSLayer,
 	lifecycleSignaler LifecycleSignaler,
 	loggerFactory LoggerFactory,
-	installMATLABAddOn InstallMATLABAddOn,
+	setupMATLAB SetupMATLAB,
 ) *ModeSelector {
 	return &ModeSelector{
-		configFactory:      configFactory,
-		parser:             parser,
-		telemetryFactory:   telemetryFactory,
-		watchdogProcess:    watchdogProcess,
-		orchestrator:       orchestrator,
-		osLayer:            osLayer,
-		lifecycleSignaler:  lifecycleSignaler,
-		loggerFactory:      loggerFactory,
-		installMATLABAddOn: installMATLABAddOn,
+		configFactory:     configFactory,
+		parser:            parser,
+		telemetryFactory:  telemetryFactory,
+		watchdogProcess:   watchdogProcess,
+		orchestrator:      orchestrator,
+		osLayer:           osLayer,
+		lifecycleSignaler: lifecycleSignaler,
+		loggerFactory:     loggerFactory,
+		setupMATLAB:       setupMATLAB,
 	}
 }
 
@@ -126,8 +126,8 @@ func (m *ModeSelector) StartAndWaitForCompletion(ctx context.Context) messages.E
 		return m.shutdownAndReturn(logger, nil)
 	case config.WatchdogMode():
 		return m.toMessagesError(logger, m.watchdogProcess.StartAndWaitForCompletion(ctx))
-	case config.InstallMATLABAddOnMode():
-		err := m.installMATLABAddOn.StartAndWaitForCompletion(ctx)
+	case config.SetupMATLABMode():
+		err := m.setupMATLAB.StartAndWaitForCompletion(ctx)
 		return m.shutdownAndReturn(logger, err)
 	default:
 		return m.toMessagesError(logger, m.orchestrator.StartAndWaitForCompletion(ctx))

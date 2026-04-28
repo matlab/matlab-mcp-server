@@ -1,6 +1,6 @@
 // Copyright 2026 The MathWorks, Inc.
 
-package installmatlabaddon
+package setupmatlab
 
 import (
 	"context"
@@ -104,7 +104,7 @@ func (m *Mode) StartAndWaitForCompletion(ctx context.Context) messages.Error {
 		return messagesErr
 	}
 
-	successMessage := m.messageCatalog.Get(messages.CLIMessages_SuccessfullyInstalledMATLABAddOn)
+	successMessage := m.messageCatalog.Get(messages.CLIMessages_SuccessfullySetupMATLAB)
 	_, err = fmt.Fprintf(m.osLayer.Stdout(), "%s\n", successMessage)
 	if err != nil {
 		logger.

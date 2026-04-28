@@ -37,7 +37,7 @@ func (s *Selector) DefaultParameters() []entities.Parameter {
 	parameterDefs := []parameter.ParameterWithDescriptionFromMessageCatalog{
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
-		defaultparameters.InstallMATLABAddOnMode(),
+		defaultparameters.SetupMATLABMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.LogLevel(),
 		defaultparameters.DuplicateLogsToStderr(),

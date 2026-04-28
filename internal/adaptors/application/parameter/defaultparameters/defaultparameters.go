@@ -38,13 +38,13 @@ func VersionMode() *parameter.Parameter[bool] {
 	)
 }
 
-func InstallMATLABAddOnMode() *parameter.Parameter[bool] {
+func SetupMATLABMode() *parameter.Parameter[bool] {
 	return parameter.NewParameter(
-		/* id */ "InstallMATLABAddOnMode",
-		/* flagName */ "install-matlab-addon",
+		/* id */ "SetupMATLABMode",
+		/* flagName */ "setup-matlab",
 		/* hiddenFlag */ false,
-		/* envVarName */ envVarNamePrefix+"INSTALL_MATLAB_ADDON",
-		/* descriptionKey */ messages.CLIMessages_InstallMATLABAddOnDescription,
+		/* envVarName */ envVarNamePrefix+"SERVER_SETUP_MATLAB",
+		/* descriptionKey */ messages.CLIMessages_SetupMATLABDescription,
 		/* defaultValue */ false,
 		/* recordToLog */ false,
 		/* piiSafe */ true,

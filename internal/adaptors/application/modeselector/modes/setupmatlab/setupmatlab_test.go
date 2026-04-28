@@ -1,15 +1,15 @@
 // Copyright 2026 The MathWorks, Inc.
 
-package installmatlabaddon_test
+package setupmatlab_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/installmatlabaddon"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
-	installmatlabaddonmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/modeselector/modes/installmatlabaddon"
+	setupmatlabmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/modeselector/modes/setupmatlab"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,26 +17,26 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	// Act
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Assert
 	assert.NotNil(t, mode)
@@ -44,22 +44,22 @@ func TestNew_HappyPath(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
@@ -96,7 +96,7 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		Once()
 
 	mockMessageCatalog.EXPECT().
-		Get(messages.CLIMessages_SuccessfullyInstalledMATLABAddOn).
+		Get(messages.CLIMessages_SuccessfullySetupMATLAB).
 		Return(successMessage).
 		Once()
 
@@ -105,7 +105,7 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		Return(&bytes.Buffer{}).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
@@ -116,22 +116,22 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_LoggerFactoryError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockLoggerFactory.EXPECT().
@@ -139,7 +139,7 @@ func TestMode_StartAndWaitForCompletion_LoggerFactoryError(t *testing.T) {
 		Return(nil, messages.AnError).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(t.Context())
@@ -150,22 +150,22 @@ func TestMode_StartAndWaitForCompletion_LoggerFactoryError(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -180,7 +180,7 @@ func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 		Return(assert.AnError).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(t.Context())
@@ -192,22 +192,22 @@ func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockLogger := testutils.NewInspectableLogger()
@@ -234,7 +234,7 @@ func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 		Return(nil, assert.AnError).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
@@ -246,22 +246,22 @@ func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
@@ -296,7 +296,7 @@ func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 		Return(messages.AnError).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
@@ -307,22 +307,22 @@ func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 
 func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 	// Arrange
-	mockOSLayer := &installmatlabaddonmocks.MockOSLayer{}
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	mockMessageCatalog := &installmatlabaddonmocks.MockMessageCatalog{}
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
-	mockLoggerFactory := &installmatlabaddonmocks.MockLoggerFactory{}
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
-	mockWatchdogClient := &installmatlabaddonmocks.MockWatchdogClient{}
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
-	mockGlobalMATLAB := &installmatlabaddonmocks.MockGlobalMATLAB{}
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
 	defer mockGlobalMATLAB.AssertExpectations(t)
 
-	mockAddonManager := &installmatlabaddonmocks.MockAddonManager{}
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
 	defer mockAddonManager.AssertExpectations(t)
 
 	mockClient := &entitiesmocks.MockMATLABSessionClient{}
@@ -359,7 +359,7 @@ func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 		Once()
 
 	mockMessageCatalog.EXPECT().
-		Get(messages.CLIMessages_SuccessfullyInstalledMATLABAddOn).
+		Get(messages.CLIMessages_SuccessfullySetupMATLAB).
 		Return(successMessage).
 		Once()
 
@@ -368,7 +368,7 @@ func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 		Return(&bytes.Buffer{}).
 		Once()
 
-	mode := installmatlabaddon.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
