@@ -92,7 +92,7 @@ func (s *ExistingMATLABSessionTestSuite) assertMockReceivedEval(mockSession *moc
 
 	var found bool
 	for _, eval := range evals {
-		if strings.Contains(eval.Content, codeSubstr) {
+		if strings.Contains(eval.Code, codeSubstr) {
 			found = true
 			break
 		}
@@ -102,9 +102,9 @@ func (s *ExistingMATLABSessionTestSuite) assertMockReceivedEval(mockSession *moc
 
 func (s *ExistingMATLABSessionTestSuite) assertMockReceivedNoRequests(mockSession *mockmatlab.Session) {
 	s.T().Helper()
-	requests, err := mockSession.ReceivedRequests()
+	evals, err := mockSession.ReceivedEvals()
 	s.Require().NoError(err, "should read mock MATLAB request log")
-	s.Empty(requests, "mock MATLAB should not have received any requests")
+	s.Empty(evals, "mock MATLAB should not have received any requests")
 }
 
 func (s *ExistingMATLABSessionTestSuite) assertUserActionableError(err error) {

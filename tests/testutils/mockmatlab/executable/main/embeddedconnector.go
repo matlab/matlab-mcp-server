@@ -19,17 +19,12 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mockmatlab/mockruntime"
 )
 
-const requestLogFile = "requests.jsonl"
-
-func startConnectorServer(ctx context.Context, sessionDir, apiKey string, tlsCfg *tls.Config) error {
+func startConnectorServer(ctx context.Context, sessionDir, apiKey string, tlsCfg *tls.Config, recorder *mockruntime.EventRecorder) error {
 	ctx, cancelExit := context.WithCancel(ctx)
 	defer cancelExit()
 
-	reqLog := newRequestLogger(filepath.Join(sessionDir, requestLogFile))
-	defer reqLog.close()
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("/messageservice/json/secure", makeHandler(apiKey, handleEval(cancelExit, reqLog)))
+	mux.HandleFunc("/messageservice/json/secure", makeHandler(apiKey, handleEval(cancelExit, recorder)))
 	mux.HandleFunc("/messageservice/json/state", makeHandler(apiKey, handleState))
 
 	listener, err := tls.Listen("tcp", "127.0.0.1:0", tlsCfg)
@@ -82,7 +77,7 @@ func makeHandler(apiKey string, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func handleEval(cancelExit context.CancelFunc, reqLog *requestLogger) http.HandlerFunc {
+func handleEval(cancelExit context.CancelFunc, recorder *mockruntime.EventRecorder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -100,7 +95,7 @@ func handleEval(cancelExit context.CancelFunc, reqLog *requestLogger) http.Handl
 
 		if len(request.Messages.Eval) > 0 {
 			code := request.Messages.Eval[0].Code
-			reqLog.log("Eval", code)
+			recorder.RecordEval(code)
 			response = embeddedconnector.ConnectorPayload{
 				Messages: embeddedconnector.ConnectorMessage{
 					EvalResponse: []embeddedconnector.EvalResponseMessage{
@@ -112,12 +107,13 @@ func handleEval(cancelExit context.CancelFunc, reqLog *requestLogger) http.Handl
 				},
 			}
 			if mockruntime.ShouldExitFromEvalCode(code) {
+				recorder.RecordExitRequested()
 				defer cancelExit()
 			}
 		}
 
 		if len(request.Messages.FEval) > 0 {
-			reqLog.log("FEval", request.Messages.FEval[0].Function)
+			recorder.RecordFeval(request.Messages.FEval[0].Function)
 			response = embeddedconnector.ConnectorPayload{
 				Messages: embeddedconnector.ConnectorMessage{
 					FevalResponse: []embeddedconnector.FevalResponseMessage{

@@ -5,13 +5,13 @@ package functional_test
 import (
 	"context"
 	"os"
-	"strings"
 
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/facades/filefacade"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/logs"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpserver"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mockmatlab"
+	"github.com/matlab/matlab-mcp-core-server/tests/testutils/serverlogs"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -77,19 +77,8 @@ func (s *MockMATLABBaseSuite) createLoggedSession(ctx context.Context, env []str
 // AssertNoErrorLogs checks server log files for ERROR-level entries.
 // Use assert (not require) so deferred cleanup continues if this fails.
 func (s *MockMATLABBaseSuite) AssertNoErrorLogs(session *mcpclient.LoggedSession) {
-	logContent, err := session.ReadServerLogs()
+	errorLogs, err := serverlogs.ReadErrorLogs(session.LogFS())
 	s.NoError(err) //nolint:testifylint // assert in defer to avoid FailNow
-	if err != nil {
-		return
-	}
-
-	errorLogs := make([]string, 0)
-	for line := range strings.SplitSeq(logContent, "\n") {
-		if strings.Contains(line, "\"level\":\"ERROR\"") {
-			errorLogs = append(errorLogs, line)
-		}
-	}
-
 	s.Empty(errorLogs, "unexpected ERROR logs in server logs")
 }
 

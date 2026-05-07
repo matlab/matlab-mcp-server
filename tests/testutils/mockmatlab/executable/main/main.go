@@ -35,6 +35,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	recorder, err := initEventRecorder()
+	if err != nil {
+		log.Printf("mock MATLAB event recorder error: %v", err)
+		os.Exit(1)
+	}
+	defer recorder.Close()
+	recorder.RecordStarted(cfg.Mode)
+
 	switch cfg.Mode {
 	case mockruntime.ModeHangBeforeFiles:
 		<-ctx.Done()
@@ -56,7 +64,7 @@ func main() {
 			return
 		}
 
-		if err := runHappyPath(ctx, runtime); err != nil {
+		if err := runHappyPath(ctx, runtime, recorder); err != nil {
 			log.Printf("mock MATLAB startup failed: %v", err)
 			os.Exit(1)
 		}
@@ -66,14 +74,22 @@ func main() {
 		}
 		os.Exit(1)
 	default:
-		if err := runHappyPath(ctx, runtime); err != nil {
+		if err := runHappyPath(ctx, runtime, recorder); err != nil {
 			log.Printf("mock MATLAB startup failed: %v", err)
 			os.Exit(1)
 		}
 	}
 }
 
-func runHappyPath(ctx context.Context, runtime *mockruntime.Runtime) error {
+func initEventRecorder() (*mockruntime.EventRecorder, error) {
+	logDir := os.Getenv(mockruntime.EnvMockMATLABLogDir)
+	if logDir == "" {
+		return nil, fmt.Errorf("%s environment variable is not set", mockruntime.EnvMockMATLABLogDir)
+	}
+	return mockruntime.NewEventRecorder(logDir)
+}
+
+func runHappyPath(ctx context.Context, runtime *mockruntime.Runtime, recorder *mockruntime.EventRecorder) error {
 	sessionDir := os.Getenv(envSessionDir)
 	apiKey := os.Getenv("MWAPIKEY")
 	certFile := os.Getenv("MW_CERTFILE")
@@ -88,7 +104,7 @@ func runHappyPath(ctx context.Context, runtime *mockruntime.Runtime) error {
 		return fmt.Errorf("failed to generate TLS cert: %w", err)
 	}
 
-	if err := startConnectorServer(ctx, sessionDir, apiKey, tlsCfg); err != nil {
+	if err := startConnectorServer(ctx, sessionDir, apiKey, tlsCfg, recorder); err != nil {
 		return fmt.Errorf("server error: %w", err)
 	}
 

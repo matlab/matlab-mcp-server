@@ -15,6 +15,7 @@ const (
 	ModeStartupFailure  = "startup_failure"
 
 	EnvMockMATLABConfig = "MW_MCP_MOCK_MATLAB_CONFIG"
+	EnvMockMATLABLogDir = "MW_MCP_MOCK_MATLAB_LOG_DIR"
 )
 
 type Config struct {

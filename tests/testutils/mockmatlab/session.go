@@ -3,9 +3,7 @@
 package mockmatlab
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -23,8 +21,10 @@ const (
 	securePortFile     = "connector.securePort"
 	certificateFile    = "cert.pem"
 	certificateKeyFile = "cert.key"
+	eventLogSubDir     = "events"
 
 	EnvMockMATLABConfig = mockruntime.EnvMockMATLABConfig
+	EnvMockMATLABLogDir = mockruntime.EnvMockMATLABLogDir
 
 	defaultReadyTimeout = 10 * time.Second
 	defaultReadyPoll    = 100 * time.Millisecond
@@ -56,6 +56,7 @@ type Session struct {
 	cmd               *exec.Cmd
 	SessionDir        string
 	APIKey            string
+	eventLogDir       string
 	connectionDetails embeddedconnector.ConnectionDetails
 }
 
@@ -68,6 +69,7 @@ func StartSession(ctx context.Context, installation *Installation, cfg Config) (
 	apiKey := "mock-api-key" //nolint:gosec // Not a real credential
 	certFile := filepath.Join(sessionDir, certificateFile)
 	keyFile := filepath.Join(sessionDir, certificateKeyFile)
+	eventLogDir := filepath.Join(sessionDir, eventLogSubDir)
 
 	configJSON, err := cfg.ToEnvValue()
 	if err != nil {
@@ -82,6 +84,7 @@ func StartSession(ctx context.Context, installation *Installation, cfg Config) (
 		"MW_CERTFILE="+certFile,
 		"MW_PKEYFILE="+keyFile,
 		mockruntime.EnvMockMATLABConfig+"="+configJSON,
+		mockruntime.EnvMockMATLABLogDir+"="+eventLogDir,
 	)
 
 	if err := cmd.Start(); err != nil {
@@ -90,9 +93,10 @@ func StartSession(ctx context.Context, installation *Installation, cfg Config) (
 	}
 
 	return &Session{
-		cmd:        cmd,
-		SessionDir: sessionDir,
-		APIKey:     apiKey,
+		cmd:         cmd,
+		SessionDir:  sessionDir,
+		APIKey:      apiKey,
+		eventLogDir: eventLogDir,
 	}, nil
 }
 
@@ -155,47 +159,23 @@ func (s *Session) ShareMATLABSession(homeDir string) (string, error) {
 	return sessiondetails.Publish(homeDir, detailsJSON)
 }
 
-// ReceivedRequest represents a single request logged by the mock MATLAB process.
-type ReceivedRequest struct {
-	Timestamp   time.Time `json:"timestamp"`
-	MessageType string    `json:"messageType"`
-	Content     string    `json:"content"`
+// ReceivedEvents reads all events recorded by this mock MATLAB session.
+func (s *Session) ReceivedEvents() ([]mockruntime.InstanceEvents, error) {
+	return mockruntime.ReadEventsForAllInstances(s.eventLogDir)
 }
 
-// ReceivedRequests reads all requests logged by this mock MATLAB session.
-func (s *Session) ReceivedRequests() ([]ReceivedRequest, error) {
-	logPath := filepath.Join(s.SessionDir, "requests.jsonl")
-	f, err := os.Open(logPath) //nolint:gosec // Test utility reading from session temp dir
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to open request log: %w", err)
-	}
-	defer f.Close() //nolint:errcheck // Read-only file handle in test utility
-
-	var requests []ReceivedRequest
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		var entry ReceivedRequest
-		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
-			return nil, fmt.Errorf("failed to parse request log entry: %w", err)
-		}
-		requests = append(requests, entry)
-	}
-	return requests, scanner.Err()
-}
-
-// ReceivedEvals returns only the Eval requests received by this mock, with their mcode content.
-func (s *Session) ReceivedEvals() ([]ReceivedRequest, error) {
-	all, err := s.ReceivedRequests()
+// ReceivedEvals returns the eval/feval events received by this mock session.
+func (s *Session) ReceivedEvals() ([]mockruntime.Event, error) {
+	instances, err := s.ReceivedEvents()
 	if err != nil {
 		return nil, err
 	}
-	var evals []ReceivedRequest
-	for _, r := range all {
-		if r.MessageType == "Eval" || r.MessageType == "FEval" {
-			evals = append(evals, r)
+	var evals []mockruntime.Event
+	for _, inst := range instances {
+		for _, e := range inst.Events {
+			if e.Type == mockruntime.EventEval || e.Type == mockruntime.EventFeval {
+				evals = append(evals, e)
+			}
 		}
 	}
 	return evals, nil
