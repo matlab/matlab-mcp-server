@@ -45,24 +45,31 @@ func NewInspectableLogger() *InspectableLogger {
 	}
 }
 
-// DebugLogs returns the debug logs stored by the InspectableLogger
+// DebugLogs returns a copy of the debug logs stored by the InspectableLogger
 func (il *InspectableLogger) DebugLogs() InspectableLogs {
-	return il.debugLogs
+	return il.cloneLogs(il.debugLogs)
 }
 
-// InfoLogs returns the info logs stored by the InspectableLogger
+// InfoLogs returns a copy of the info logs stored by the InspectableLogger
 func (il *InspectableLogger) InfoLogs() InspectableLogs {
-	return il.infoLogs
+	return il.cloneLogs(il.infoLogs)
 }
 
-// WarnLogs returns the warn logs stored by the InspectableLogger
+// WarnLogs returns a copy of the warn logs stored by the InspectableLogger
 func (il *InspectableLogger) WarnLogs() InspectableLogs {
-	return il.warnLogs
+	return il.cloneLogs(il.warnLogs)
 }
 
-// ErrorLogs returns the error logs stored by the InspectableLogger
+// ErrorLogs returns a copy of the error logs stored by the InspectableLogger
 func (il *InspectableLogger) ErrorLogs() InspectableLogs {
-	return il.errorLogs
+	return il.cloneLogs(il.errorLogs)
+}
+
+func (il *InspectableLogger) cloneLogs(logs InspectableLogs) InspectableLogs {
+	il.lock.Lock()
+	defer il.lock.Unlock()
+
+	return maps.Clone(logs)
 }
 
 // Debug stores a debug log in the InspectableLogger

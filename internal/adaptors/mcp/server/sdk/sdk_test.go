@@ -3,16 +3,20 @@
 package sdk_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server/sdk"
+	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	configmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/config"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/mcp/server/sdk"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -201,6 +205,7 @@ func TestHandleInitialized_EagerMATLABInit_HappyPath(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
 	features := definition.Features{MATLAB: definition.MATLABFeature{Enabled: true}}
+	called := make(chan struct{})
 
 	mockConfig.EXPECT().
 		UseSingleMATLABSession().
@@ -213,7 +218,10 @@ func TestHandleInitialized_EagerMATLABInit_HappyPath(t *testing.T) {
 		Once()
 
 	mockGlobalMATLAB.EXPECT().
-		Client(ctx, mockLogger.AsMockArg()).
+		Client(mock.AnythingOfType("context.withoutCancelCtx"), mockLogger.AsMockArg()).
+		Run(func(_ context.Context, _ entities.Logger) {
+			close(called)
+		}).
 		Return(nil, nil).
 		Once()
 
@@ -223,6 +231,12 @@ func TestHandleInitialized_EagerMATLABInit_HappyPath(t *testing.T) {
 	handler(ctx, &mcp.InitializedRequest{Session: &mcp.ServerSession{}})
 
 	// Assert
+	select {
+	case <-called:
+		// Expected: Client was called
+	case <-time.After(time.Second):
+		t.Fatal("MATLAB eager initialization was not called")
+	}
 	assert.Empty(t, mockLogger.WarnLogs(), "no warnings should be logged on successful eager initialization")
 }
 
@@ -468,7 +482,7 @@ func TestHandleInitialized_EagerMATLABInit_ErrorLogsWarning(t *testing.T) {
 		Once()
 
 	mockGlobalMATLAB.EXPECT().
-		Client(ctx, mockLogger.AsMockArg()).
+		Client(mock.AnythingOfType("context.withoutCancelCtx"), mockLogger.AsMockArg()).
 		Return(nil, expectedError).
 		Once()
 
@@ -478,9 +492,11 @@ func TestHandleInitialized_EagerMATLABInit_ErrorLogsWarning(t *testing.T) {
 	handler(ctx, &mcp.InitializedRequest{Session: &mcp.ServerSession{}})
 
 	// Assert
-	logs := mockLogger.WarnLogs()
-	fields, found := logs["MATLAB eager initialization failed"]
-	require.True(t, found, "Expected warning log for MATLAB initialization failure")
+	require.Eventually(t, func() bool {
+		_, found := mockLogger.WarnLogs()["MATLAB eager initialization failed"]
+		return found
+	}, time.Second, time.Millisecond)
+	fields := mockLogger.WarnLogs()["MATLAB eager initialization failed"]
 	assert.Equal(t, expectedError, fields["error"])
 }
 

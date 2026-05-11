@@ -114,14 +114,23 @@ func (s *serverCallbackHandler) handleInitialized(ctx context.Context, req *mcp.
 	s.logClientDetails(req.Session)
 
 	if err := s.updateRoots(ctx, req.Session); err != nil {
-		s.logger.WithError(err).Warn("failed to update MCP roots, using fallback starting folder")
+		s.logger.
+			WithError(err).
+			Warn("failed to update MCP roots, using fallback starting folder")
 	}
 
 	matlabEnabled := s.features.MATLAB.Enabled
 	if matlabEnabled && s.config.UseSingleMATLABSession() && s.config.InitializeMATLABOnStartup() {
-		if _, err := s.globalMATLAB.Client(ctx, s.logger); err != nil {
-			s.logger.WithError(err).Warn("MATLAB eager initialization failed")
-		}
+		go func() {
+			s.logger.Debug("Eagerly initializing MATLAB")
+
+			startMATLABCtx := context.WithoutCancel(ctx)
+			if _, err := s.globalMATLAB.Client(startMATLABCtx, s.logger); err != nil {
+				s.logger.
+					WithError(err).
+					Warn("MATLAB eager initialization failed")
+			}
+		}()
 	}
 }
 
