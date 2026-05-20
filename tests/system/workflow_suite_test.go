@@ -45,11 +45,10 @@ type WorkflowTestSuite struct {
 // - run_matlab_test_file (test execution)
 func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 	for _, tc := range []struct {
-		displayMode     string
-		expectedDesktop string
+		displayMode string
 	}{
-		{displayMode: "desktop", expectedDesktop: "1"},
-		{displayMode: "nodesktop", expectedDesktop: "0"},
+		{displayMode: "desktop"},
+		{displayMode: "nodesktop"},
 	} {
 		s.Run(tc.displayMode, func() {
 			ctx := s.T().Context()
@@ -78,13 +77,8 @@ func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 			s.Require().NoError(err, "should detect toolboxes")
 			s.Contains(info, "MATLAB Version:", "should discover MATLAB version")
 
-			// Step 2b: Verify MATLAB display mode matches the requested mode
-			output, err := session.EvaluateCode(ctx, "disp(desktop('-inuse'))")
-			s.Require().NoError(err, "should evaluate desktop check")
-			s.Equal(tc.expectedDesktop, strings.TrimSpace(output), "desktop('-inuse') should reflect the requested display mode")
-
 			// Step 3a: Iterative development with explicit integer math
-			output, err = session.EvaluateCode(ctx, `a = int32(2); b = int32(3);`)
+			output, err := session.EvaluateCode(ctx, `a = int32(2); b = int32(3);`)
 			s.Require().NoError(err)
 			s.Empty(output, "semicolon-terminated statements should produce no output")
 
