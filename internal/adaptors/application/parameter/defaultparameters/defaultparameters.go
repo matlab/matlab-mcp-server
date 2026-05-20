@@ -188,7 +188,7 @@ func MATLABSessionMode() *parameter.Parameter[string] {
 		/* hiddenFlag */ false,
 		/* envVarName */ envVarNamePrefix+"MATLAB_SESSION_MODE",
 		/* descriptionKey */ messages.CLIMessages_MATLABSessionModeDescription,
-		/* defaultValue */ string(entities.MATLABSessionModeNew),
+		/* defaultValue */ string(entities.MATLABSessionModeAuto),
 		/* recordToLog */ true,
 		/* piiSafe */ true,
 	)

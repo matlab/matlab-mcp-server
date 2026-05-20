@@ -77,13 +77,15 @@ func (s *SessionManager) StartSession(ctx context.Context, logger entities.Logge
 
 	switch cfg.MATLABSessionMode() {
 	case entities.MATLABSessionModeExisting:
-		sessionID, err = s.getSessionFromAttachingToExistingMATLAB(ctx, logger, cfg.MATLABSessionDiscoveryTimeout())
+		sessionID, err = s.getSessionFromAttachingToExistingMATLAB(ctx, logger, cfg)
 		if err != nil {
 			logger.WithError(err).Debug("failed to attach to MATLAB session")
 			err = ErrFailedToAttachToMATLABSession
 		}
+	case entities.MATLABSessionModeAuto:
+		sessionID, err = s.getSessionInAutoMode(ctx, logger, cfg)
 	default:
-		sessionID, err = s.getSessionFromLocalMATLABInstallation(ctx, logger, cfg.ShouldShowMATLABDesktop())
+		sessionID, err = s.getSessionFromLocalMATLABInstallation(ctx, logger, cfg)
 	}
 
 	if err != nil {
@@ -131,7 +133,7 @@ func (s *SessionManager) initializeStartupConfig(ctx context.Context, logger ent
 	return nil
 }
 
-func (s *SessionManager) getSessionFromLocalMATLABInstallation(ctx context.Context, logger entities.Logger, showMATLABDesktop bool) (entities.SessionID, error) {
+func (s *SessionManager) getSessionFromLocalMATLABInstallation(ctx context.Context, logger entities.Logger, cfg config.Config) (entities.SessionID, error) {
 	s.initOnce.Do(func() {
 		s.initErr = s.initializeStartupConfig(ctx, logger)
 	})
@@ -143,14 +145,35 @@ func (s *SessionManager) getSessionFromLocalMATLABInstallation(ctx context.Conte
 		MATLABRoot:             s.matlabRoot,
 		IsStartingDirectorySet: s.matlabStartingDir != "",
 		StartingDirectory:      s.matlabStartingDir,
-		ShowMATLABDesktop:      showMATLABDesktop,
+		ShowMATLABDesktop:      cfg.ShouldShowMATLABDesktop(),
 	}
 
 	return s.matlabManager.StartMATLABSession(ctx, logger, startRequest)
 }
 
-func (s *SessionManager) getSessionFromAttachingToExistingMATLAB(ctx context.Context, logger entities.Logger, discoveryTimeout time.Duration) (entities.SessionID, error) {
+func (s *SessionManager) getSessionInAutoMode(ctx context.Context, logger entities.Logger, cfg config.Config) (entities.SessionID, error) {
+	sessionID, err := s.getSessionFromAttachingToExistingMATLAB(ctx, logger, cfg)
+	if err != nil {
+		logger.
+			WithError(err).
+			Debug("auto mode: no existing MATLAB session found, falling back to launching MATLAB")
+		return s.getSessionFromLocalMATLABInstallation(ctx, logger, cfg)
+	}
+
+	return sessionID, nil
+}
+
+func (s *SessionManager) getSessionFromAttachingToExistingMATLAB(ctx context.Context, logger entities.Logger, cfg config.Config) (entities.SessionID, error) {
 	startRequest := entities.AttachToExistingSession{}
+
+	discoveryTimeout := cfg.MATLABSessionDiscoveryTimeout()
+
+	// A zero timeout means "try once, no polling". Use half the retry interval
+	// so the context stays alive long enough for a single attempt but expires
+	// before the retry strategy fires a second one.
+	if discoveryTimeout == 0 {
+		discoveryTimeout = s.discoveryRetryInterval / 2
+	}
 
 	attachCtx, cancel := context.WithTimeout(ctx, discoveryTimeout)
 	defer cancel()

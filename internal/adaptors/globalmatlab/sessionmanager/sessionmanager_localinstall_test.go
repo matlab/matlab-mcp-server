@@ -200,11 +200,6 @@ func TestSessionManager_StartSession_LocalInstall_SelectMATLABRootError(t *testi
 		Return(entities.MATLABSessionModeNew).
 		Once()
 
-	mockConfig.EXPECT().
-		ShouldShowMATLABDesktop().
-		Return(false).
-		Once()
-
 	mockMATLABRootSelector.EXPECT().
 		SelectMATLABRoot(ctx, mockLogger.AsMockArg()).
 		Return("", expectedError).

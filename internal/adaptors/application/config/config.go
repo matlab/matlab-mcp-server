@@ -325,7 +325,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 	}
 
 	switch matlabSessionMode {
-	case string(entities.MATLABSessionModeNew), string(entities.MATLABSessionModeExisting):
+	case string(entities.MATLABSessionModeNew), string(entities.MATLABSessionModeExisting), string(entities.MATLABSessionModeAuto):
 	default:
 		return validatedArguments{}, messages.New_StartupErrors_InvalidMATLABSessionMode_Error(matlabSessionMode)
 	}
@@ -349,7 +349,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, err
 	}
 
-	if matlabSessionDiscoveryTimeout <= 0 {
+	if matlabSessionDiscoveryTimeout < 0 {
 		matlabSessionDiscoveryTimeout = defaultparameters.MATLABSessionDiscoveryTimeout().GetTypedDefaultValue()
 	}
 
@@ -419,19 +419,49 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		telemetryCollectorEndpointInsecure: telemetryCollectorEndpointInsecure,
 	}
 
-	args, err = checkArgumentCompatibilityAndAdjustDefaults(args, rawCfg.specifiedParameters)
-	if err != nil {
+	args = adjustDefaults(args, rawCfg.specifiedParameters)
+
+	if err = checkArgumentCompatibility(args, rawCfg.specifiedParameters); err != nil {
 		return validatedArguments{}, err
 	}
 
 	return args, nil
 }
 
-func checkArgumentCompatibilityAndAdjustDefaults(args validatedArguments, specifiedParameters []string) (validatedArguments, messages.Error) {
+func adjustDefaults(args validatedArguments, specifiedParameters []string) validatedArguments {
 	// If installing the MATLAB Add-On, and displayMode isn't specified
 	// it's a better user experience to not flash the desktop
-	if args.setupMATLABMode && !slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
+	if args.setupMATLABMode &&
+		!slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
 		args.displayMode = entities.DisplayModeNoDesktop
+	}
+
+	// If the user explicitly provided connection details but did not set the session mode,
+	// infer "existing" mode — the intent is to connect to a specific session.
+	if !slices.Contains(specifiedParameters, defaultparameters.MATLABSessionMode().GetID()) &&
+		slices.Contains(specifiedParameters, defaultparameters.MATLABSessionConnectionDetails().GetID()) {
+		args.matlabSessionMode = entities.MATLABSessionModeExisting
+	}
+
+	// In auto mode, default the discovery timeout to 0 (instant check, no polling)
+	// unless the user explicitly set it.
+	if args.matlabSessionMode == entities.MATLABSessionModeAuto &&
+		!slices.Contains(specifiedParameters, defaultparameters.MATLABSessionDiscoveryTimeout().GetID()) {
+		args.matlabSessionDiscoveryTimeout = 0
+	}
+
+	return args
+}
+
+func checkArgumentCompatibility(args validatedArguments, specifiedParameters []string) messages.Error {
+	// Connection details are only meaningful in "existing" mode.
+	// Reject if the user explicitly set both connection details and a non-existing session mode.
+	if slices.Contains(specifiedParameters, defaultparameters.MATLABSessionConnectionDetails().GetID()) &&
+		args.matlabSessionMode != entities.MATLABSessionModeExisting {
+		return messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
+			defaultparameters.MATLABSessionConnectionDetails().GetFlagName(),
+			string(args.matlabSessionMode),
+		)
 	}
 
 	// If using MATLAB Session Mode `existing`, most of the MATLAB flags are unsupported
@@ -443,12 +473,15 @@ func checkArgumentCompatibilityAndAdjustDefaults(args validatedArguments, specif
 		}
 		for _, parameter := range disallowedParametersInExistingSessionMode {
 			if slices.Contains(specifiedParameters, parameter.GetID()) {
-				return validatedArguments{}, messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(parameter.GetFlagName(), string(entities.MATLABSessionModeExisting))
+				return messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
+					parameter.GetFlagName(),
+					string(entities.MATLABSessionModeExisting),
+				)
 			}
 		}
 	}
 
-	return args, nil
+	return nil
 }
 
 func getForKey(args map[string]any, key string) (any, messages.Error) {

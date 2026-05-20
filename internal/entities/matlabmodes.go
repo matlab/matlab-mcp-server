@@ -14,4 +14,5 @@ type MATLABSessionMode string
 const (
 	MATLABSessionModeNew      MATLABSessionMode = "new"
 	MATLABSessionModeExisting MATLABSessionMode = "existing"
+	MATLABSessionModeAuto     MATLABSessionMode = "auto"
 )
