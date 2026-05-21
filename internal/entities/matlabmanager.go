@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package entities
 
@@ -38,6 +38,10 @@ type LocalSessionDetails struct {
 }
 
 func (l LocalSessionDetails) interfacelock() {}
+
+type AttachToExistingSession struct{}
+
+func (a AttachToExistingSession) interfacelock() {}
 
 type EvalRequest struct {
 	Code string

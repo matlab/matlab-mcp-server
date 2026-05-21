@@ -38,22 +38,25 @@ func (b *syncBuffer) String() string {
 // MCPClient wraps MCP session with helper methods
 // Lifecycle: NewClient -> CreateSession -> [operations] -> Close
 type MCPClient struct {
-	client    *mcp.Client
-	transport *mcp.CommandTransport
-	stderr    *syncBuffer
+	client     *mcp.Client
+	clientImpl *mcp.Implementation
+	transport  *mcp.CommandTransport
+	stderr     *syncBuffer
 }
 
 // MCPClientSession represents an active MCP session
 type MCPClientSession struct {
-	session *mcp.ClientSession
-	stderr  *syncBuffer
+	session    *mcp.ClientSession
+	clientImpl *mcp.Implementation
+	stderr     *syncBuffer
 }
 
 func GetMCPClientImplementation() *mcp.Implementation {
-	// Those values don't matter for the system tests, but are required to construct an MCP client.
 	return &mcp.Implementation{
-		Name:    "test-client-for-matlab-mcp-core-server",
-		Version: "test-client-for-matlab-mcp-core-server",
+		Name:       "test-client-for-matlab-mcp-core-server",
+		Title:      "Test Client",
+		Version:    "v.0.1-some-version",
+		WebsiteURL: "https://test-client.example.com",
 	}
 }
 
@@ -87,12 +90,14 @@ func newClient(ctx context.Context, serverPath string, env []string, clientOpts 
 		Command:           cmd,
 		TerminateDuration: 3 * time.Minute,
 	}
-	client := mcp.NewClient(GetMCPClientImplementation(), clientOpts)
+	impl := GetMCPClientImplementation()
+	client := mcp.NewClient(impl, clientOpts)
 
 	return &MCPClient{
-		client:    client,
-		transport: transport,
-		stderr:    stderr,
+		client:     client,
+		clientImpl: impl,
+		transport:  transport,
+		stderr:     stderr,
 	}
 }
 
@@ -122,9 +127,26 @@ func (c *MCPClient) CreateSession(ctx context.Context, opts ...CreateSessionOpti
 		return nil, fmt.Errorf("failed to create MCP client session: %w", err)
 	}
 	return &MCPClientSession{
-		session: session,
-		stderr:  c.stderr,
+		session:    session,
+		clientImpl: c.clientImpl,
+		stderr:     c.stderr,
 	}, nil
+}
+
+func (s *MCPClientSession) ClientName() string {
+	return s.clientImpl.Name
+}
+
+func (s *MCPClientSession) ClientVersion() string {
+	return s.clientImpl.Version
+}
+
+func (s *MCPClientSession) ClientTitle() string {
+	return s.clientImpl.Title
+}
+
+func (s *MCPClientSession) ClientWebsiteURL() string {
+	return s.clientImpl.WebsiteURL
 }
 
 func (s *MCPClientSession) Close() error {

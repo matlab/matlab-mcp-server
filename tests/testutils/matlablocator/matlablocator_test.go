@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlablocator_test
 
@@ -15,9 +15,10 @@ import (
 
 func Test_GetPath_HappyPath(t *testing.T) {
 	// Arrange
-	_, expectedMATLABFilePath := fakematlab.Create(t)
+	placeholder, err := fakematlab.NewPlaceholder(t.TempDir())
+	require.NoError(t, err)
 
-	t.Setenv("MCP_MATLAB_PATH", expectedMATLABFilePath)
+	t.Setenv("MCP_MATLAB_PATH", placeholder.Path())
 
 	// Act
 	matlabPath, err := matlablocator.GetPath()
@@ -25,7 +26,7 @@ func Test_GetPath_HappyPath(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(matlabPath), "Expected absolute path, got: %s", matlabPath)
-	assert.Equal(t, expectedMATLABFilePath, matlabPath)
+	assert.Equal(t, placeholder.Path(), matlabPath)
 }
 
 func Test_GetPath_NotSet(t *testing.T) {

@@ -23,16 +23,16 @@ type Definition interface {
 	Features() definition.Features
 }
 
+type RootStore interface {
+	UpdateRoots(roots []*mcp.Root)
+}
+
 type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
 type GlobalMATLAB interface {
 	Client(ctx context.Context, logger entities.Logger) (entities.MATLABSessionClient, error)
-}
-
-type RootStore interface {
-	UpdateRoots(roots []*mcp.Root)
 }
 
 type MCPSession interface {
@@ -106,6 +106,13 @@ func (f *Factory) NewServer() (*mcp.Server, messages.Error) {
 }
 
 func (s *serverCallbackHandler) handleInitialized(ctx context.Context, req *mcp.InitializedRequest) {
+	if req == nil ||
+		req.Session == nil {
+		return
+	}
+
+	s.logClientDetails(req.Session)
+
 	if err := s.updateRoots(ctx, req.Session); err != nil {
 		s.logger.WithError(err).Warn("failed to update MCP roots, using fallback starting folder")
 	}
@@ -121,6 +128,20 @@ func (s *serverCallbackHandler) handleInitialized(ctx context.Context, req *mcp.
 func (s *serverCallbackHandler) handleRootsListChanged(ctx context.Context, req *mcp.RootsListChangedRequest) {
 	if err := s.updateRoots(ctx, req.Session); err != nil {
 		s.logger.WithError(err).Warn("failed to update MCP roots, using fallback starting folder")
+	}
+}
+
+func (s *serverCallbackHandler) logClientDetails(session MCPSession) {
+	initializeParams := session.InitializeParams()
+	if initializeParams != nil &&
+		initializeParams.ClientInfo != nil {
+		clientInfo := initializeParams.ClientInfo
+		s.logger.
+			With("client-name", clientInfo.Name).
+			With("client-title", clientInfo.Title).
+			With("client-url", clientInfo.WebsiteURL).
+			With("client-version", clientInfo.Version).
+			Info("New client session")
 	}
 }
 

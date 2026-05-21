@@ -11,6 +11,7 @@
         <entry key="InvalidLogLevel" context="error">Error with supplied arguments: invalid log level {0}.</entry>
         <entry key="FailedToCreateLogFile" context="error">Failed to create the log file "{0}".</entry>
         <entry key="InvalidDisplayMode" context="error">Error with supplied arguments: invalid display mode {0}.</entry>
+        <entry key="InvalidMATLABSessionMode" context="error">Error with supplied arguments: invalid MATLAB session mode {0}.</entry>
         <entry key="MissingValue" context="error">Error with supplied arguments: value required for option {0}.</entry>
         <entry key="ParseFailed" context="error">Error with supplied arguments: parse failed.{0}{1}</entry>
         <entry key="TelemetryInitializationFailed" context="error">Failed to initialize telemetry.</entry>
@@ -22,5 +23,14 @@
         <entry key="DuplicateParameter" context="error">Found duplicate parameter "{0}": {1} with value "{2}" is already defined.</entry>
         <entry key="InvalidParameterKey" context="error">Invalid key "{0}" in configuration.</entry>
         <entry key="InvalidParameterType" context="error">Invalid type for key "{0}" in configuration, expected "{1}".</entry>
+        <entry key="FailedToReadExtensionFile" context="error">Failed to read extension file "{0}". Check that file is valid.</entry>
+        <entry key="FailedToParseExtensionFile" context="error">Failed to parse extension file "{0}". File must contain valid JSON.</entry>
+        <entry key="InvalidToolDefinition" context="error">Invalid custom tool definition in "{0}". Tool must match the tool schema specified by MCP.</entry>
+        <entry key="InvalidToolInputSchema" context="error">Invalid input schema for tool "{0}" in "{1}".</entry>
+        <entry key="MissingToolSignature" context="error">Missing signature for tool "{0}" in "{1}".</entry>
+        <entry key="InvalidToolSignature" context="error">Invalid signature for tool "{0}" in "{1}".</entry>
+        <entry key="CustomToolNameConflict" context="error">Custom tool name "{0}" in extension file "{1}" conflicts with a built-in tool. Choose a different name.</entry>
+        <entry key="ArgumentNotAllowedInSessionMode" context="error">Error with supplied arguments: option "{0}" is not compatible with MATLAB session mode set to "{1}".</entry>
+        <entry key="DuplicateToolName" context="error">Duplicate tool name "{0}" in "{1}". Choose a different name.</entry>
     </message>
 </rsccat>

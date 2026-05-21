@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager_test
 
@@ -18,6 +18,9 @@ func TestMATLABManager_ListEnvironments_HappyPath(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	mockMATLABManager := &mocks.MockMATLABServices{}
 	defer mockMATLABManager.AssertExpectations(t)
 
@@ -26,6 +29,9 @@ func TestMATLABManager_ListEnvironments_HappyPath(t *testing.T) {
 
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
+
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
 
 	expectedMatlabInfos := []datatypes.MatlabInfo{{
 		Location: filepath.Join("path", "to", "matlab", "R2023a"),
@@ -52,7 +58,7 @@ func TestMATLABManager_ListEnvironments_HappyPath(t *testing.T) {
 		Return(mockResponse).
 		Once()
 
-	manager := matlabmanager.New(mockMATLABManager, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector)
 	ctx := t.Context()
 
 	// Act
@@ -72,6 +78,9 @@ func TestMATLABManager_ListEnvironments_EmptyList(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	mockMATLABManager := &mocks.MockMATLABServices{}
 	defer mockMATLABManager.AssertExpectations(t)
 
@@ -81,6 +90,9 @@ func TestMATLABManager_ListEnvironments_EmptyList(t *testing.T) {
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
 
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
+
 	mockResponse := datatypes.ListMatlabInfo{
 		MatlabInfo: []datatypes.MatlabInfo{},
 	}
@@ -89,7 +101,7 @@ func TestMATLABManager_ListEnvironments_EmptyList(t *testing.T) {
 		Return(mockResponse).
 		Once()
 
-	manager := matlabmanager.New(mockMATLABManager, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABManager, mockSessionStore, mockClientFactory, mockSessionSelector)
 	ctx := t.Context()
 
 	// Act

@@ -15,21 +15,32 @@ import (
 const redactedValue = "[REDACTED]"
 
 type validatedArguments struct {
-	logLevel entities.LogLevel
+	versionMode     bool
+	helpMode        bool
+	watchdogMode    bool
+	setupMATLABMode bool
 
-	versionMode  bool
-	helpMode     bool
-	watchdogMode bool
+	baseDirectory    string
+	serverInstanceID string
 
+	// Logger
+	logLevel              entities.LogLevel
+	duplicateLogsToStderr bool
+
+	// MATLAB
 	useSingleMATLABSession           bool
 	initializeMATLABOnStartup        bool
 	preferredLocalMATLABRoot         string
 	preferredMATLABStartingDirectory string
 	displayMode                      entities.DisplayMode
+	matlabSessionMode                entities.MATLABSessionMode
+	matlabSessionConnectionDetails   string
+	matlabSessionConnectionTimeout   time.Duration
+	matlabSessionDiscoveryTimeout    time.Duration
+	embeddedConnectorDetailsTimeout  time.Duration
+	extensionFile                    string
 
-	baseDirectory    string
-	serverInstanceID string
-
+	// Telemetry
 	disableTelemetry                   bool
 	telemetryCollectorEndpoint         string
 	telemetryCollectionInterval        time.Duration
@@ -89,6 +100,10 @@ func (c *config) LogLevel() entities.LogLevel {
 	return c.logLevel
 }
 
+func (c *config) DuplicateLogsToStderr() bool {
+	return c.duplicateLogsToStderr
+}
+
 func (c *config) VersionMode() bool {
 	return c.versionMode
 }
@@ -99,6 +114,10 @@ func (c *config) HelpMode() bool {
 
 func (c *config) WatchdogMode() bool {
 	return c.watchdogMode
+}
+
+func (c *config) SetupMATLABMode() bool {
+	return c.setupMATLABMode
 }
 
 func (c *config) UseSingleMATLABSession() bool {
@@ -128,12 +147,36 @@ func (c *config) ShouldShowMATLABDesktop() bool {
 	}
 }
 
+func (c *config) MATLABSessionMode() entities.MATLABSessionMode {
+	return c.matlabSessionMode
+}
+
+func (c *config) MATLABSessionConnectionDetails() string {
+	return c.matlabSessionConnectionDetails
+}
+
+func (c *config) MATLABSessionConnectionTimeout() time.Duration {
+	return c.matlabSessionConnectionTimeout
+}
+
+func (c *config) MATLABSessionDiscoveryTimeout() time.Duration {
+	return c.matlabSessionDiscoveryTimeout
+}
+
+func (c *config) ExtensionFile() string {
+	return c.extensionFile
+}
+
 func (c *config) BaseDir() string {
 	return c.baseDirectory
 }
 
 func (c *config) ServerInstanceID() string {
 	return c.serverInstanceID
+}
+
+func (c *config) EmbeddedConnectorDetailsTimeout() time.Duration {
+	return c.embeddedConnectorDetailsTimeout
 }
 
 func (c *config) DisableTelemetry() bool {
@@ -189,22 +232,6 @@ func (c *config) RecordToLogger(logger entities.Logger) {
 }
 
 func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
-	logLevel, err := get(rawCfg, defaultparameters.LogLevel())
-	if err != nil {
-		return validatedArguments{}, err
-	}
-
-	switch logLevel {
-	case string(entities.LogLevelDebug), string(entities.LogLevelInfo), string(entities.LogLevelWarn), string(entities.LogLevelError):
-	default:
-		return validatedArguments{}, messages.New_StartupErrors_InvalidLogLevel_Error(logLevel)
-	}
-
-	disableTelemetry, err := get(rawCfg, defaultparameters.DisableTelemetry())
-	if err != nil {
-		return validatedArguments{}, err
-	}
-
 	versionMode, err := get(rawCfg, defaultparameters.VersionMode())
 	if err != nil {
 		return validatedArguments{}, err
@@ -216,6 +243,37 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 	}
 
 	watchdogMode, err := get(rawCfg, defaultparameters.WatchdogMode())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	setupMATLABMode, err := get(rawCfg, defaultparameters.SetupMATLABMode())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	baseDirectory, err := get(rawCfg, defaultparameters.BaseDir())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	serverInstanceID, err := get(rawCfg, defaultparameters.ServerInstanceID())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	logLevel, err := get(rawCfg, defaultparameters.LogLevel())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	switch logLevel {
+	case string(entities.LogLevelDebug), string(entities.LogLevelInfo), string(entities.LogLevelWarn), string(entities.LogLevelError):
+	default:
+		return validatedArguments{}, messages.New_StartupErrors_InvalidLogLevel_Error(logLevel)
+	}
+
+	duplicateLogsToStderr, err := get(rawCfg, defaultparameters.DuplicateLogsToStderr())
 	if err != nil {
 		return validatedArguments{}, err
 	}
@@ -256,14 +314,57 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, messages.New_StartupErrors_InvalidDisplayMode_Error(displayMode)
 	}
 
-	baseDirectory, err := get(rawCfg, defaultparameters.BaseDir())
+	extensionFile, err := get(rawCfg, defaultparameters.ExtensionFile())
 	if err != nil {
 		return validatedArguments{}, err
 	}
 
-	serverInstanceID, err := get(rawCfg, defaultparameters.ServerInstanceID())
+	matlabSessionMode, err := get(rawCfg, defaultparameters.MATLABSessionMode())
 	if err != nil {
 		return validatedArguments{}, err
+	}
+
+	switch matlabSessionMode {
+	case string(entities.MATLABSessionModeNew), string(entities.MATLABSessionModeExisting):
+	default:
+		return validatedArguments{}, messages.New_StartupErrors_InvalidMATLABSessionMode_Error(matlabSessionMode)
+	}
+
+	matlabSessionConnectionDetails, err := get(rawCfg, defaultparameters.MATLABSessionConnectionDetails())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	matlabSessionConnectionTimeout, err := get(rawCfg, defaultparameters.MATLABSessionConnectionTimeout())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	if matlabSessionConnectionTimeout <= 0 {
+		matlabSessionConnectionTimeout = defaultparameters.MATLABSessionConnectionTimeout().GetTypedDefaultValue()
+	}
+
+	matlabSessionDiscoveryTimeout, err := get(rawCfg, defaultparameters.MATLABSessionDiscoveryTimeout())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	if matlabSessionDiscoveryTimeout <= 0 {
+		matlabSessionDiscoveryTimeout = defaultparameters.MATLABSessionDiscoveryTimeout().GetTypedDefaultValue()
+	}
+
+	disableTelemetry, err := get(rawCfg, defaultparameters.DisableTelemetry())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	embeddedConnectorDetailsTimeout, err := get(rawCfg, defaultparameters.EmbeddedConnectorDetailsTimeout())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	if embeddedConnectorDetailsTimeout <= 0 {
+		embeddedConnectorDetailsTimeout = defaultparameters.EmbeddedConnectorDetailsTimeout().GetTypedDefaultValue()
 	}
 
 	telemetryCollectorEndpoint, err := get(rawCfg, defaultparameters.TelemetryCollectorEndpoint())
@@ -285,27 +386,69 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, err
 	}
 
-	return validatedArguments{
-		logLevel:         entities.LogLevel(logLevel),
-		disableTelemetry: disableTelemetry,
+	args := validatedArguments{
+		versionMode:     versionMode,
+		helpMode:        helpMode,
+		watchdogMode:    watchdogMode,
+		setupMATLABMode: setupMATLABMode,
 
-		versionMode:  versionMode,
-		helpMode:     helpMode,
-		watchdogMode: watchdogMode,
+		baseDirectory:    baseDirectory,
+		serverInstanceID: serverInstanceID,
 
+		// Logger
+		logLevel:              entities.LogLevel(logLevel),
+		duplicateLogsToStderr: duplicateLogsToStderr,
+
+		// MATLAB
 		useSingleMATLABSession:           useSingleMATLABSession,
 		initializeMATLABOnStartup:        initializeMATLABOnStartup,
 		preferredLocalMATLABRoot:         preferredLocalMATLABRoot,
 		preferredMATLABStartingDirectory: preferredMATLABStartingDirectory,
 		displayMode:                      entities.DisplayMode(displayMode),
+		matlabSessionMode:                entities.MATLABSessionMode(matlabSessionMode),
+		matlabSessionConnectionDetails:   matlabSessionConnectionDetails,
+		matlabSessionConnectionTimeout:   matlabSessionConnectionTimeout,
+		matlabSessionDiscoveryTimeout:    matlabSessionDiscoveryTimeout,
+		embeddedConnectorDetailsTimeout:  embeddedConnectorDetailsTimeout,
+		extensionFile:                    extensionFile,
 
-		baseDirectory:    baseDirectory,
-		serverInstanceID: serverInstanceID,
-
+		// Telemetry
+		disableTelemetry:                   disableTelemetry,
 		telemetryCollectorEndpoint:         telemetryCollectorEndpoint,
 		telemetryCollectionInterval:        telemetryCollectionInterval,
 		telemetryCollectorEndpointInsecure: telemetryCollectorEndpointInsecure,
-	}, nil
+	}
+
+	args, err = checkArgumentCompatibilityAndAdjustDefaults(args, rawCfg.specifiedParameters)
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	return args, nil
+}
+
+func checkArgumentCompatibilityAndAdjustDefaults(args validatedArguments, specifiedParameters []string) (validatedArguments, messages.Error) {
+	// If installing the MATLAB Add-On, and displayMode isn't specified
+	// it's a better user experience to not flash the desktop
+	if args.setupMATLABMode && !slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
+		args.displayMode = entities.DisplayModeNoDesktop
+	}
+
+	// If using MATLAB Session Mode `existing`, most of the MATLAB flags are unsupported
+	if args.matlabSessionMode == entities.MATLABSessionModeExisting {
+		disallowedParametersInExistingSessionMode := []entities.Parameter{
+			defaultparameters.PreferredLocalMATLABRoot(),
+			defaultparameters.PreferredMATLABStartingDirectory(),
+			defaultparameters.MATLABDisplayMode(),
+		}
+		for _, parameter := range disallowedParametersInExistingSessionMode {
+			if slices.Contains(specifiedParameters, parameter.GetID()) {
+				return validatedArguments{}, messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(parameter.GetFlagName(), string(entities.MATLABSessionModeExisting))
+			}
+		}
+	}
+
+	return args, nil
 }
 
 func getForKey(args map[string]any, key string) (any, messages.Error) {

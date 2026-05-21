@@ -1,0 +1,27 @@
+{
+    "tools": [
+        {
+            "name": "test_tool",
+            "title": "Test Tool",
+            "description": "A test tool",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "n": {
+                        "type": "number",
+                        "description": "A number"
+                    }
+                },
+                "required": ["n"]
+            }
+        }
+    ],
+    "signatures": {
+        "test_tool": {
+            "function": "testFunc",
+            "input": {
+                "order": ["n"]
+            }
+        }
+    }
+}

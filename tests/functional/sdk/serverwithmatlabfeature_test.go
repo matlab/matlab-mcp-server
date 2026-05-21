@@ -28,11 +28,7 @@ func TestServerWithMATLABFeatureTestSuite(t *testing.T) {
 func (s *ServerWithMATLABFeatureTestSuite) TestSDK_MATLABFeature_HappyPath() {
 	// Arrange
 	session := s.CreateSession(s.serverDetails.BinaryLocation(), nil, nil)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		s.AssertNoErrorLogs(session)
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, true)
 
 	// Act
 	listToolsResponse, err := session.ListTools(s.T().Context(), nil)

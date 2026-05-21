@@ -10,6 +10,9 @@ func DefaultConfig() collectorConfig {
 
 func (collectorConfig) generateConfig() string {
 	config := `
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:` + healthCheckPort + `"
 receivers:
   otlp:
     protocols:
@@ -20,6 +23,7 @@ exporters:
     path: "/tmp/telemetry/` + telemetryFileName + `"
     format: json
 service:
+  extensions: [health_check]
   pipelines:
     metrics:
       receivers: [otlp]

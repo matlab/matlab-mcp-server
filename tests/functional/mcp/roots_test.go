@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/matlab/matlab-mcp-core-server/tests/testutils/fakematlab"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,26 +27,6 @@ func TestRootsTestSuite(t *testing.T) {
 	suite.Run(t, new(RootsTestSuite))
 }
 
-// waitForStartupInfo polls the fake MATLAB output file until startup info is available.
-func (s *RootsTestSuite) waitForStartupInfo() fakematlab.StartupInfo {
-	s.T().Helper()
-	var startupInfo fakematlab.StartupInfo
-	s.Require().Eventually(func() bool {
-		info, err := s.FakeMatlab().ReadStartupInfo()
-		startupInfo = info
-		return err == nil
-	}, 30*time.Second, 500*time.Millisecond, "fake MATLAB should have written its startup info")
-	return startupInfo
-}
-
-// normalizedPath returns a cleaned, lowercased absolute path for comparison.
-func (s *RootsTestSuite) normalizedPath(dir string) string {
-	s.T().Helper()
-	abs, err := filepath.Abs(dir)
-	s.Require().NoError(err)
-	return strings.ToLower(filepath.Clean(abs))
-}
-
 func (s *RootsTestSuite) TestMATLABStartsInFirstRootDirectory() {
 	// Arrange
 	workspaceDir := s.T().TempDir()
@@ -61,7 +39,7 @@ func (s *RootsTestSuite) TestMATLABStartsInFirstRootDirectory() {
 	)
 
 	// Assert
-	startupInfo := s.waitForStartupInfo()
+	startupInfo := s.WaitForStartupInfo()
 	s.Equal(
 		s.normalizedPath(workspaceDir),
 		s.normalizedPath(startupInfo.WorkingDir),
@@ -84,7 +62,7 @@ func (s *RootsTestSuite) TestMultipleRoots_MATLABStartsInFirstRoot() {
 	)
 
 	// Assert — server should use the first root as MATLAB's working directory.
-	startupInfo := s.waitForStartupInfo()
+	startupInfo := s.WaitForStartupInfo()
 	s.Equal(
 		s.normalizedPath(projectDir1),
 		s.normalizedPath(startupInfo.WorkingDir),
@@ -97,7 +75,7 @@ func (s *RootsTestSuite) TestNoRoots_MATLABStillLaunches() {
 	_ = s.CreateSession()
 
 	// Assert — the fake MATLAB should still have been launched (with some default working directory).
-	startupInfo := s.waitForStartupInfo()
+	startupInfo := s.WaitForStartupInfo()
 	s.NotEmpty(startupInfo.WorkingDir, "MATLAB should have a working directory even without roots")
 	s.NotEmpty(startupInfo.Args, "fake MATLAB should have received command-line arguments")
 }
@@ -108,7 +86,15 @@ func (s *RootsTestSuite) TestNoRootsCapability_MATLABStillLaunches() {
 	_ = s.CreateSessionWithoutRootsCapability()
 
 	// Assert — MATLAB launches with a default working directory (not root-derived).
-	startupInfo := s.waitForStartupInfo()
+	startupInfo := s.WaitForStartupInfo()
 	s.NotEmpty(startupInfo.WorkingDir, "MATLAB should have a working directory even without roots capability")
 	s.NotEmpty(startupInfo.Args, "fake MATLAB should have received command-line arguments")
+}
+
+// normalizedPath returns a cleaned, lowercased absolute path for comparison.
+func (s *RootsTestSuite) normalizedPath(dir string) string {
+	s.T().Helper()
+	abs, err := filepath.Abs(dir)
+	s.Require().NoError(err)
+	return strings.ToLower(filepath.Clean(abs))
 }

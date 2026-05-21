@@ -47,6 +47,10 @@ type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
+type SetupMATLAB interface {
+	StartAndWaitForCompletion(ctx context.Context) messages.Error
+}
+
 type ModeSelector struct {
 	configFactory     ConfigFactory
 	telemetryFactory  TelemetryFactory
@@ -56,6 +60,7 @@ type ModeSelector struct {
 	parser            Parser
 	lifecycleSignaler LifecycleSignaler
 	loggerFactory     LoggerFactory
+	setupMATLAB       SetupMATLAB
 }
 
 func New(
@@ -67,6 +72,7 @@ func New(
 	osLayer OSLayer,
 	lifecycleSignaler LifecycleSignaler,
 	loggerFactory LoggerFactory,
+	setupMATLAB SetupMATLAB,
 ) *ModeSelector {
 	return &ModeSelector{
 		configFactory:     configFactory,
@@ -77,6 +83,7 @@ func New(
 		osLayer:           osLayer,
 		lifecycleSignaler: lifecycleSignaler,
 		loggerFactory:     loggerFactory,
+		setupMATLAB:       setupMATLAB,
 	}
 }
 
@@ -119,6 +126,9 @@ func (m *ModeSelector) StartAndWaitForCompletion(ctx context.Context) messages.E
 		return m.shutdownAndReturn(logger, nil)
 	case config.WatchdogMode():
 		return m.toMessagesError(logger, m.watchdogProcess.StartAndWaitForCompletion(ctx))
+	case config.SetupMATLABMode():
+		err := m.setupMATLAB.StartAndWaitForCompletion(ctx)
+		return m.shutdownAndReturn(logger, err)
 	default:
 		return m.toMessagesError(logger, m.orchestrator.StartAndWaitForCompletion(ctx))
 	}

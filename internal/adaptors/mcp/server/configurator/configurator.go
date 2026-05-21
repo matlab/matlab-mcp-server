@@ -3,6 +3,8 @@
 package configurator
 
 import (
+	"slices"
+
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/definition"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources"
@@ -29,26 +31,24 @@ type ApplicationDefinition interface {
 	Features() definition.Features
 }
 
+type CustomToolFactory interface {
+	LoadTools(filePath string) ([]tools.Tool, messages.Error)
+}
+
 type Configurator struct {
 	configFactory    ConfigFactory
 	featuresProvider ApplicationDefinition
 
-	// Multi Session tools
-	listAvailableMATLABsTool tools.Tool
-	startMATLABSessionTool   tools.Tool
-	stopMATLABSessionTool    tools.Tool
-	evalInMATLABSessionTool  tools.Tool
-
-	// Single Session tools
-	evalInGlobalMATLABSessionTool                  tools.Tool
-	checkMATLABCodeInGlobalMATLABSessionTool       tools.Tool
-	detectMATLABToolboxesInGlobalMATLABSessionTool tools.Tool
-	runMATLABFileInGlobalMATLABSessionTool         tools.Tool
-	runMATLABTestFileInGlobalMATLABSessionTool     tools.Tool
+	// Built-in tools
+	multiSessionTools  []tools.Tool
+	singleSessionTools []tools.Tool
 
 	// Resources
 	codingGuidelinesResource            resources.Resource
 	plaintextlivecodegenerationResource resources.Resource
+
+	// Custom tool dependencies
+	customToolFactory CustomToolFactory
 }
 
 func New(
@@ -69,25 +69,33 @@ func New(
 
 	codingGuidelinesResource *codingguidelines.Resource,
 	plaintextlivecodegenerationResource *plaintextlivecodegeneration.Resource,
+
+	customToolFactory CustomToolFactory,
 ) *Configurator {
 	return &Configurator{
 		configFactory: configFactory,
 
 		featuresProvider: featuresProvider,
 
-		listAvailableMATLABsTool: listAvailableMATLABsTool,
-		startMATLABSessionTool:   startMATLABSessionTool,
-		stopMATLABSessionTool:    stopMATLABSessionTool,
-		evalInMATLABSessionTool:  evalInMATLABSessionTool,
+		multiSessionTools: []tools.Tool{
+			listAvailableMATLABsTool,
+			startMATLABSessionTool,
+			stopMATLABSessionTool,
+			evalInMATLABSessionTool,
+		},
 
-		evalInGlobalMATLABSessionTool:                  evalInGlobalMATLABSessionTool,
-		checkMATLABCodeInGlobalMATLABSessionTool:       checkMATLABCodeInGlobalMATLABSession,
-		detectMATLABToolboxesInGlobalMATLABSessionTool: detectMATLABToolboxesInGlobalMATLABSessionTool,
-		runMATLABFileInGlobalMATLABSessionTool:         runMATLABFileInGlobalMATLABSessionTool,
-		runMATLABTestFileInGlobalMATLABSessionTool:     runMATLABTestFileInGlobalMATLABSessionTool,
+		singleSessionTools: []tools.Tool{
+			evalInGlobalMATLABSessionTool,
+			checkMATLABCodeInGlobalMATLABSession,
+			detectMATLABToolboxesInGlobalMATLABSessionTool,
+			runMATLABFileInGlobalMATLABSessionTool,
+			runMATLABTestFileInGlobalMATLABSessionTool,
+		},
 
 		codingGuidelinesResource:            codingGuidelinesResource,
 		plaintextlivecodegenerationResource: plaintextlivecodegenerationResource,
+
+		customToolFactory: customToolFactory,
 	}
 }
 
@@ -96,27 +104,53 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 		return []tools.Tool{}, nil
 	}
 
-	config, err := c.configFactory.Config()
+	cfg, err := c.configFactory.Config()
 	if err != nil {
 		return nil, err
 	}
 
-	if config.UseSingleMATLABSession() {
-		return []tools.Tool{
-			c.evalInGlobalMATLABSessionTool,
-			c.checkMATLABCodeInGlobalMATLABSessionTool,
-			c.detectMATLABToolboxesInGlobalMATLABSessionTool,
-			c.runMATLABFileInGlobalMATLABSessionTool,
-			c.runMATLABTestFileInGlobalMATLABSessionTool,
-		}, nil
+	if cfg.UseSingleMATLABSession() {
+		customTools, err := c.loadCustomTools(cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		return slices.Concat(c.singleSessionTools, customTools), nil
 	}
 
-	return []tools.Tool{
-		c.listAvailableMATLABsTool,
-		c.startMATLABSessionTool,
-		c.stopMATLABSessionTool,
-		c.evalInMATLABSessionTool,
-	}, nil
+	return slices.Clone(c.multiSessionTools), nil
+}
+
+func (c *Configurator) loadCustomTools(cfg config.Config) ([]tools.Tool, error) {
+	extensionFilePath := cfg.ExtensionFile()
+	if extensionFilePath == "" {
+		return nil, nil
+	}
+
+	customTools, err := c.customToolFactory.LoadTools(extensionFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range customTools {
+		if c.isBuiltInSingleSessionToolName(t.Name()) {
+			return nil, messages.New_StartupErrors_CustomToolNameConflict_Error(
+				t.Name(),
+				extensionFilePath,
+			)
+		}
+	}
+
+	return customTools, nil
+}
+
+func (c *Configurator) isBuiltInSingleSessionToolName(name string) bool {
+	for _, t := range c.singleSessionTools {
+		if t.Name() == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Configurator) GetResourcesToAdd() []resources.Resource {

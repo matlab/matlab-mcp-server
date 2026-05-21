@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager
 
@@ -8,9 +8,24 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
+type matlabSessionClientWithoutCleanup struct {
+	entities.MATLABSessionClient
+}
+
 type matlabSessionClientWithCleanup struct {
 	entities.MATLABSessionClient
 	sessionCleanup func() error
+}
+
+func newMATLABSessionClientWithoutCleanup(matlabSessionClient entities.MATLABSessionClient) *matlabSessionClientWithoutCleanup {
+	return &matlabSessionClientWithoutCleanup{
+		MATLABSessionClient: matlabSessionClient,
+	}
+}
+
+func (c *matlabSessionClientWithoutCleanup) StopSession(ctx context.Context, sessionLogger entities.Logger) error {
+	sessionLogger.Debug("Skipping session stop for externally managed MATLAB session")
+	return nil
 }
 
 func newMATLABSessionClientWithCleanup(matlabSessionClient entities.MATLABSessionClient, sessionCleanup func() error) *matlabSessionClientWithCleanup {

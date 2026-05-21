@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package tools
 
@@ -17,6 +17,7 @@ type RichContent struct {
 }
 
 type Tool interface {
+	Name() string
 	AddToServer(server *mcp.Server) error
 }
 

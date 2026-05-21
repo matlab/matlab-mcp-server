@@ -57,6 +57,12 @@ type DirectoryFactory interface {
 	Directory() (directory.Directory, messages.Error)
 }
 
+type ResourceLimitManager interface {
+	CapOpenFilesLimit(limit uint64) (func() error, error)
+}
+
+const UnixOpenFileDescriptorsSoftCap uint64 = 1 << 16
+
 // Orchestrator
 type Orchestrator struct {
 	messageCatalog        MessageCatalog
@@ -68,6 +74,7 @@ type Orchestrator struct {
 	loggerFactory         LoggerFactory
 	osSignaler            OSSignaler
 	directoryFactory      DirectoryFactory
+	resourceLimitManager  ResourceLimitManager
 }
 
 func New(
@@ -80,6 +87,7 @@ func New(
 	loggerFactory LoggerFactory,
 	osSignaler OSSignaler,
 	directoryFactory DirectoryFactory,
+	resourceLimitManager ResourceLimitManager,
 ) *Orchestrator {
 	orchestrator := &Orchestrator{
 		messageCatalog:        messageCatalog,
@@ -91,6 +99,7 @@ func New(
 		loggerFactory:         loggerFactory,
 		osSignaler:            osSignaler,
 		directoryFactory:      directoryFactory,
+		resourceLimitManager:  resourceLimitManager,
 	}
 	return orchestrator
 }
@@ -104,6 +113,11 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 	logger, messagesErr := o.loggerFactory.GetGlobalLogger()
 	if messagesErr != nil {
 		return messagesErr
+	}
+
+	resetOpenFilesLimit, err := o.resourceLimitManager.CapOpenFilesLimit(UnixOpenFileDescriptorsSoftCap)
+	if err != nil {
+		return err
 	}
 
 	defer func() {
@@ -121,10 +135,18 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 			logger.WithError(err).Warn("Watchdog shutdown failed")
 		}
 
+		logger.Debug("Restoring open files limit")
+		err = resetOpenFilesLimit()
+		if err != nil {
+			logger.WithError(err).Warn("Failed to restore open files limit")
+		}
+
 		logger.Info("Application shutdown complete")
 	}()
 
-	logger.Info("Initiating application startup")
+	logger.
+		With("version", config.Version()).
+		Info("Initiating application startup")
 	config.RecordToLogger(logger)
 
 	directory, messagesErr := o.directoryFactory.Directory()
@@ -133,7 +155,7 @@ func (o *Orchestrator) StartAndWaitForCompletion(ctx context.Context) error {
 	}
 	directory.RecordToLogger(logger)
 
-	err := o.watchdogClient.Start()
+	err = o.watchdogClient.Start()
 	if err != nil {
 		return err
 	}

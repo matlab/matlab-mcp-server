@@ -3,17 +3,19 @@
 package directory_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
+	appconfigmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/config"
 	applicationdirectorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/directory"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,8 +30,11 @@ func TestNewFactory_HappyPath(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	// Act
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Assert
 	assert.NotNil(t, factory)
@@ -49,6 +54,12 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedSessionDir := filepath.Join("tmp", "matlab-session-12345")
@@ -66,7 +77,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 		Once()
 
 	mockApplicationDirectory.EXPECT().
-		CreateSubDir(mock.AnythingOfType("string")).
+		CreateSubDir("matlab-session-").
 		Return(expectedSessionDir, nil).
 		Once()
 
@@ -80,6 +91,16 @@ func TestFactory_New_HappyPath(t *testing.T) {
 		Return(expectedMATLABFiles).
 		Once()
 
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(10 * time.Minute).
+		Once()
+
 	for fileName, fileContent := range expectedMATLABFiles {
 		filePath := filepath.Join(packageDir, fileName)
 		mockOSLayer.EXPECT().
@@ -88,7 +109,7 @@ func TestFactory_New_HappyPath(t *testing.T) {
 			Once()
 	}
 
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Act
 	dir, err := factory.New(mockLogger)
@@ -99,6 +120,39 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedSessionDir, dir.Path())
 	assert.Equal(t, expectedCertificateFile, dir.CertificateFile())
 	assert.Equal(t, expectedCertificateKeyFile, dir.CertificateKeyFile())
+}
+
+func TestFactory_New_ConfigFactoryError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockApplicationDirectoryFactory := &mocks.MockApplicationDirectoryFactory{}
+	defer mockApplicationDirectoryFactory.AssertExpectations(t)
+
+	mockMATLABFiles := &mocks.MockMATLABFiles{}
+	defer mockMATLABFiles.AssertExpectations(t)
+
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(nil, expectedError).
+		Once()
+
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
+
+	// Act
+	dir, err := factory.New(mockLogger)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+	assert.Nil(t, dir)
 }
 
 func TestFactory_New_DirectoryFactoryError(t *testing.T) {
@@ -112,16 +166,27 @@ func TestFactory_New_DirectoryFactoryError(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
 
 	mockApplicationDirectoryFactory.EXPECT().
 		Directory().
 		Return(nil, expectedError).
 		Once()
 
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Act
 	dir, err := factory.New(mockLogger)
@@ -131,7 +196,7 @@ func TestFactory_New_DirectoryFactoryError(t *testing.T) {
 	assert.Nil(t, dir)
 }
 
-func TestFactory_New_MkdirTempError(t *testing.T) {
+func TestFactory_New_CreateSubDirError(t *testing.T) {
 	// Arrange
 	mockOSLayer := &mocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
@@ -145,9 +210,20 @@ func TestFactory_New_MkdirTempError(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedError := messages.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
 
 	mockApplicationDirectoryFactory.EXPECT().
 		Directory().
@@ -155,11 +231,11 @@ func TestFactory_New_MkdirTempError(t *testing.T) {
 		Once()
 
 	mockApplicationDirectory.EXPECT().
-		CreateSubDir(mock.AnythingOfType("string")).
+		CreateSubDir("matlab-session-").
 		Return("", expectedError).
 		Once()
 
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Act
 	dir, err := factory.New(mockLogger)
@@ -183,11 +259,22 @@ func TestFactory_New_PackageDirectoryMkdirError(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 
 	sessionDir := filepath.Join("tmp", "matlab-session-12345")
 	packageDir := filepath.Join(sessionDir, "+matlab_mcp")
 	expectedError := assert.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
 
 	mockApplicationDirectoryFactory.EXPECT().
 		Directory().
@@ -195,7 +282,7 @@ func TestFactory_New_PackageDirectoryMkdirError(t *testing.T) {
 		Once()
 
 	mockApplicationDirectory.EXPECT().
-		CreateSubDir(mock.AnythingOfType("string")).
+		CreateSubDir("matlab-session-").
 		Return(sessionDir, nil).
 		Once()
 
@@ -204,7 +291,12 @@ func TestFactory_New_PackageDirectoryMkdirError(t *testing.T) {
 		Return(expectedError).
 		Once()
 
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	mockOSLayer.EXPECT().
+		RemoveAll(sessionDir).
+		Return(nil).
+		Once()
+
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Act
 	dir, err := factory.New(mockLogger)
@@ -228,11 +320,22 @@ func TestFactory_New_WriteFileError(t *testing.T) {
 	mockMATLABFiles := &mocks.MockMATLABFiles{}
 	defer mockMATLABFiles.AssertExpectations(t)
 
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
 	mockLogger := testutils.NewInspectableLogger()
 
 	sessionDir := filepath.Join("tmp", "matlab-session-12345")
 	packageDir := filepath.Join(sessionDir, "+matlab_mcp")
 	expectedError := assert.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
 
 	mockApplicationDirectoryFactory.EXPECT().
 		Directory().
@@ -240,7 +343,7 @@ func TestFactory_New_WriteFileError(t *testing.T) {
 		Once()
 
 	mockApplicationDirectory.EXPECT().
-		CreateSubDir(mock.AnythingOfType("string")).
+		CreateSubDir("matlab-session-").
 		Return(sessionDir, nil).
 		Once()
 
@@ -265,7 +368,12 @@ func TestFactory_New_WriteFileError(t *testing.T) {
 		Return(expectedError).
 		Once()
 
-	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles)
+	mockOSLayer.EXPECT().
+		RemoveAll(sessionDir).
+		Return(nil).
+		Once()
+
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
 
 	// Act
 	dir, err := factory.New(mockLogger)
@@ -273,4 +381,71 @@ func TestFactory_New_WriteFileError(t *testing.T) {
 	// Assert
 	require.ErrorIs(t, err, expectedError)
 	assert.Nil(t, dir)
+}
+
+func TestFactory_New_CleanupFailureOnError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockApplicationDirectoryFactory := &mocks.MockApplicationDirectoryFactory{}
+	defer mockApplicationDirectoryFactory.AssertExpectations(t)
+
+	mockApplicationDirectory := &applicationdirectorymocks.MockDirectory{}
+	defer mockApplicationDirectory.AssertExpectations(t)
+
+	mockMATLABFiles := &mocks.MockMATLABFiles{}
+	defer mockMATLABFiles.AssertExpectations(t)
+
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &appconfigmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	packageDir := filepath.Join(sessionDir, "+matlab_mcp")
+	expectedError := assert.AnError
+	cleanupError := errors.New("cleanup failed")
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockApplicationDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockApplicationDirectory, nil).
+		Once()
+
+	mockApplicationDirectory.EXPECT().
+		CreateSubDir("matlab-session-").
+		Return(sessionDir, nil).
+		Once()
+
+	mockOSLayer.EXPECT().
+		Mkdir(packageDir, os.FileMode(0o700)).
+		Return(expectedError).
+		Once()
+
+	mockOSLayer.EXPECT().
+		RemoveAll(sessionDir).
+		Return(cleanupError).
+		Once()
+
+	factory := directory.NewFactory(mockOSLayer, mockApplicationDirectoryFactory, mockMATLABFiles, mockConfigFactory)
+
+	// Act
+	dir, err := factory.New(mockLogger)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError)
+	assert.Nil(t, dir)
+
+	warnLogs := mockLogger.WarnLogs()
+	fields, found := warnLogs["Failed to cleanup session directory during error handling"]
+	require.True(t, found)
+	assert.Equal(t, cleanupError, fields["error"])
 }

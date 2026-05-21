@@ -31,11 +31,7 @@ func (s *CLITestSuite) TestMATLABRootFlag() {
 
 	ctx := s.T().Context()
 	session := s.CreateMCPSession(ctx, env, nil, "--matlab-root="+s.matlabRoot())
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		s.AssertNoErrorLogs(session)
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, true)
 
 	output, err := session.EvaluateCode(ctx, "disp('Server functional'); 2+2", s.testDataDir)
 	s.Require().NoError(err, "evaluating MATLAB code should not error")

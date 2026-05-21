@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"io"
+
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -94,6 +96,52 @@ func (_c *MockOSLayer_Create_Call) Return(file osfacade.File, err error) *MockOS
 }
 
 func (_c *MockOSLayer_Create_Call) RunAndReturn(run func(name string) (osfacade.File, error)) *MockOSLayer_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Stderr provides a mock function for the type MockOSLayer
+func (_mock *MockOSLayer) Stderr() io.Writer {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stderr")
+	}
+
+	var r0 io.Writer
+	if returnFunc, ok := ret.Get(0).(func() io.Writer); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.Writer)
+		}
+	}
+	return r0
+}
+
+// MockOSLayer_Stderr_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stderr'
+type MockOSLayer_Stderr_Call struct {
+	*mock.Call
+}
+
+// Stderr is a helper method to define mock.On call
+func (_e *MockOSLayer_Expecter) Stderr() *MockOSLayer_Stderr_Call {
+	return &MockOSLayer_Stderr_Call{Call: _e.mock.On("Stderr")}
+}
+
+func (_c *MockOSLayer_Stderr_Call) Run(run func()) *MockOSLayer_Stderr_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockOSLayer_Stderr_Call) Return(writer io.Writer) *MockOSLayer_Stderr_Call {
+	_c.Call.Return(writer)
+	return _c
+}
+
+func (_c *MockOSLayer_Stderr_Call) RunAndReturn(run func() io.Writer) *MockOSLayer_Stderr_Call {
 	_c.Call.Return(run)
 	return _c
 }

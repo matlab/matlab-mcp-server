@@ -7,6 +7,7 @@ import (
 	"os"
 	"syscall"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
@@ -168,47 +169,41 @@ func TestProcessManager_FindProcess_Unix_ProcessSignalError(t *testing.T) {
 func TestProcessManager_WaitForProcessToComplete_Unix_HappyPath(t *testing.T) {
 	for _, goos := range []string{"linux", "darwin"} {
 		t.Run(goos, func(t *testing.T) {
-			// Arrange
-			mockOSLayer := &osmocks.MockOSLayer{}
-			defer mockOSLayer.AssertExpectations(t)
+			synctest.Test(t, func(t *testing.T) {
+				// Arrange
+				mockOSLayer := &osmocks.MockOSLayer{}
+				defer mockOSLayer.AssertExpectations(t)
 
-			mockProcess := &osfacademocks.MockProcess{}
-			defer mockProcess.AssertExpectations(t)
+				mockProcess := &osfacademocks.MockProcess{}
+				defer mockProcess.AssertExpectations(t)
 
-			processPid := 1234
+				processPid := 1234
 
-			mockOSLayer.EXPECT().
-				GOOS().
-				Return(goos).
-				Once()
+				mockOSLayer.EXPECT().
+					GOOS().
+					Return(goos).
+					Once()
 
-			mockOSLayer.EXPECT().
-				FindProcess(processPid).
-				Return(mockProcess, nil).
-				Times(3)
+				mockOSLayer.EXPECT().
+					FindProcess(processPid).
+					Return(mockProcess, nil).
+					Times(3)
 
-			mockProcess.EXPECT().
-				Signal(syscall.Signal(0)).
-				Return(nil).
-				Twice()
+				mockProcess.EXPECT().
+					Signal(syscall.Signal(0)).
+					Return(nil).
+					Twice()
 
-			mockProcess.EXPECT().
-				Signal(syscall.Signal(0)).
-				Return(fmt.Errorf("process not found")).
-				Once()
+				mockProcess.EXPECT().
+					Signal(syscall.Signal(0)).
+					Return(fmt.Errorf("process not found")).
+					Once()
 
-			pm := osadaptor.NewProcessManager(mockOSLayer)
+				pm := osadaptor.NewProcessManager(mockOSLayer)
 
-			tickInterval := 1 * time.Millisecond
-			pm.SetCheckParentAliveInterval(tickInterval)
-
-			// Act
-			startTime := time.Now()
-			pm.WaitForProcessToComplete(processPid)
-			duration := time.Since(startTime)
-
-			// Assert
-			assert.GreaterOrEqual(t, duration, 3*tickInterval, "Should wait three intervals before process ends")
+				// Act & Assert: mock expectations verify it was called 3 times with 2 retries
+				pm.WaitForProcessToComplete(processPid)
+			})
 		})
 	}
 }

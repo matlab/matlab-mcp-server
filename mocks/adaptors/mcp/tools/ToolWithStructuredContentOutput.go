@@ -132,3 +132,47 @@ func (_c *MockToolWithStructuredContentOutput_Handler_Call[ToolInput, ToolOutput
 	_c.Call.Return(run)
 	return _c
 }
+
+// Name provides a mock function for the type MockToolWithStructuredContentOutput
+func (_mock *MockToolWithStructuredContentOutput[ToolInput, ToolOutput]) Name() string {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Name")
+	}
+
+	var r0 string
+	if returnFunc, ok := ret.Get(0).(func() string); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	return r0
+}
+
+// MockToolWithStructuredContentOutput_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
+type MockToolWithStructuredContentOutput_Name_Call[ToolInput any, ToolOutput any] struct {
+	*mock.Call
+}
+
+// Name is a helper method to define mock.On call
+func (_e *MockToolWithStructuredContentOutput_Expecter[ToolInput, ToolOutput]) Name() *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput] {
+	return &MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput]{Call: _e.mock.On("Name")}
+}
+
+func (_c *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput]) Run(run func()) *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput]) Return(s string) *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput] {
+	_c.Call.Return(s)
+	return _c
+}
+
+func (_c *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput]) RunAndReturn(run func() string) *MockToolWithStructuredContentOutput_Name_Call[ToolInput, ToolOutput] {
+	_c.Call.Return(run)
+	return _c
+}

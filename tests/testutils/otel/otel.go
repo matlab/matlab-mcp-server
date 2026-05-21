@@ -6,12 +6,14 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -19,6 +21,7 @@ import (
 const (
 	containerImage     = "otel/opentelemetry-collector:latest"
 	containerHTTPPort  = "4318"
+	healthCheckPort    = "13133"
 	telemetryFileName  = "telemetry.json"
 	startupTimeout     = 30 * time.Second
 	shutdownTimeout    = 10 * time.Second
@@ -26,18 +29,22 @@ const (
 )
 
 type Collector struct {
-	containerID   string
-	hostPort      string
-	telemetryDir  string
-	telemetryFile string
-	configFile    string
+	containerID    string
+	hostPort       string
+	healthHostPort string
+	telemetryDir   string
+	telemetryFile  string
+	configFile     string
 }
 
 func StartCollector(t *testing.T, cfg collectorConfig) *Collector {
 	t.Helper()
 
 	hostPort, err := findFreePort()
-	require.NoError(t, err, "failed to find free port")
+	require.NoError(t, err, "failed to find free port for OTLP")
+
+	healthHostPort, err := findFreePort()
+	require.NoError(t, err, "failed to find free port for health check")
 
 	testDir := t.TempDir()
 	telemetryDir := filepath.Join(testDir, "telemetry")
@@ -50,18 +57,19 @@ func StartCollector(t *testing.T, cfg collectorConfig) *Collector {
 
 	telemetryFile := filepath.Join(telemetryDir, telemetryFileName)
 
-	containerID, err := startContainer(t, hostPort, configFile, telemetryDir)
+	containerID, err := startContainer(t, hostPort, healthHostPort, configFile, telemetryDir)
 	require.NoError(t, err, "failed to start container")
 
 	c := &Collector{
-		containerID:   containerID,
-		hostPort:      hostPort,
-		telemetryDir:  telemetryDir,
-		telemetryFile: telemetryFile,
-		configFile:    configFile,
+		containerID:    containerID,
+		hostPort:       hostPort,
+		healthHostPort: healthHostPort,
+		telemetryDir:   telemetryDir,
+		telemetryFile:  telemetryFile,
+		configFile:     configFile,
 	}
 
-	err = c.waitForReady()
+	err = c.waitForReady(t.Context())
 	if err != nil {
 		c.Stop(t)
 	}
@@ -110,25 +118,33 @@ func (c *Collector) ReadTelemetry(t *testing.T) (pmetric.Metrics, error) {
 	return unmarshaler.UnmarshalMetrics(data)
 }
 
-func (c *Collector) waitForReady() error {
-	ctx, cancel := context.WithTimeout(context.Background(), startupTimeout)
+func (c *Collector) waitForReady(parent context.Context) error {
+	ctx, cancel := context.WithTimeout(parent, startupTimeout)
 	defer cancel()
 
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
+	healthURL := fmt.Sprintf("http://localhost:%s/", c.healthHostPort)
 
-	for {
-		select {
-		case <-ctx.Done():
-			logs := c.getLogs()
-			return fmt.Errorf("timeout waiting for collector to be ready: %s", logs)
-		case <-ticker.C:
-			conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%s", c.hostPort), time.Second)
-			if err == nil {
-				return conn.Close()
-			}
+	_, err := retry.Retry(ctx, func() (struct{}, bool, error) {
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
+		if reqErr != nil {
+			return struct{}{}, false, reqErr
 		}
+		resp, httpErr := http.DefaultClient.Do(req)
+		if httpErr != nil {
+			return struct{}{}, false, nil
+		}
+		if err := resp.Body.Close(); err != nil {
+			return struct{}{}, false, err
+		}
+		return struct{}{}, resp.StatusCode == http.StatusOK, nil
+	}, retry.NewLinearRetryStrategy(100*time.Millisecond))
+
+	if err != nil {
+		logs := c.getLogs()
+		return fmt.Errorf("collector failed to become ready: %w\nlogs: %s", err, logs)
 	}
+
+	return nil
 }
 
 func (c *Collector) getLogs() string {
@@ -147,7 +163,7 @@ func findFreePort() (string, error) {
 	return fmt.Sprintf("%d", addr.Port), listener.Close()
 }
 
-func startContainer(t *testing.T, hostPort, configFile, telemetryDir string) (string, error) {
+func startContainer(t *testing.T, hostPort, healthHostPort, configFile, telemetryDir string) (string, error) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
@@ -159,6 +175,7 @@ func startContainer(t *testing.T, hostPort, configFile, telemetryDir string) (st
 	args := []string{
 		"run", "-d",
 		"-p", fmt.Sprintf("%s:%s", hostPort, containerHTTPPort),
+		"-p", fmt.Sprintf("%s:%s", healthHostPort, healthCheckPort),
 		"-v", fmt.Sprintf("%s:%s:ro", configFile, containerPathToConfig),
 		"-v", fmt.Sprintf("%s:%s", telemetryDir, containerPathForFileExporter),
 		containerImage,

@@ -5,7 +5,6 @@ package logger
 import (
 	"io"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -38,6 +37,7 @@ type FilenameFactory interface {
 }
 
 type OSLayer interface {
+	Stderr() io.Writer
 	Create(name string) (osfacade.File, error)
 }
 
@@ -47,10 +47,11 @@ type Factory struct {
 	filenameFactory  FilenameFactory
 	osLayer          OSLayer
 
-	initOnce       sync.Once
-	initError      messages.Error
-	parsedLogLevel slog.Level
-	logFile        entities.Writer
+	initOnce              sync.Once
+	initError             messages.Error
+	parsedLogLevel        slog.Level
+	duplicateLogsToStderr bool
+	logFile               entities.Writer
 
 	globalLoggerOnce sync.Once
 	globalLogger     *slogLogger
@@ -96,8 +97,9 @@ func (f *Factory) NewMCPSessionLogger(session *mcp.ServerSession) (entities.Logg
 }
 
 func (f *Factory) GetGlobalLogger() (entities.Logger, messages.Error) {
-	// There are cases where we want to log, but wo don't have an MCP session yet.
-	// In those cases, we must log to stderr, to not affect the stdio transport:
+	// There are cases where we want to log, but we don't have an MCP session yet.
+	// In those cases, we log to the log file and, optionally, to stderr if requested.
+	// Logging to stderr is allowed by the MCP spec:
 	//
 	// https://modelcontextprotocol.io/docs/develop/build-server#best-practices
 	if err := f.initialize(); err != nil {
@@ -105,9 +107,12 @@ func (f *Factory) GetGlobalLogger() (entities.Logger, messages.Error) {
 	}
 
 	f.globalLoggerOnce.Do(func() {
-		multiWriter := io.MultiWriter(os.Stderr, f.logFile)
+		logWriter := f.logFile
+		if f.duplicateLogsToStderr {
+			logWriter = io.MultiWriter(f.osLayer.Stderr(), f.logFile)
+		}
 
-		handler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
+		handler := slog.NewJSONHandler(logWriter, &slog.HandlerOptions{
 			Level: f.parsedLogLevel,
 		})
 		f.globalLogger = &slogLogger{
@@ -125,6 +130,8 @@ func (f *Factory) initialize() messages.Error {
 			f.initError = messagesErr
 			return
 		}
+
+		f.duplicateLogsToStderr = config.DuplicateLogsToStderr()
 
 		var parsedLogLevel slog.Level
 		logLevel := config.LogLevel()

@@ -1,0 +1,24 @@
+{
+  "tools": [
+    {
+      "name": "generate_magic_square",
+      "title": "Generate Magic Square",
+      "description": "Generates an n-by-n magic square matrix",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "n": {"type": "number", "description": "Size of the magic square"}
+        },
+        "required": ["n"]
+      }
+    }
+  ],
+  "signatures": {
+    "generate_magic_square": {
+      "function": "magic",
+      "input": {
+        "order": ["n"]
+      }
+    }
+  }
+}

@@ -4,10 +4,12 @@ package directory_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	osfacademocks "github.com/matlab/matlab-mcp-core-server/mocks/facades/osfacade"
 	"github.com/stretchr/testify/assert"
@@ -22,17 +24,32 @@ func TestDirectory_GetEmbeddedConnectorDetails_HappyPath(t *testing.T) {
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
-	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -71,17 +88,37 @@ func TestDirectory_GetEmbeddedConnectorDetails_WaitsForSecurePortFile(t *testing
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
-	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -124,17 +161,37 @@ func TestDirectory_GetEmbeddedConnectorDetails_WaitsForCertificateFile(t *testin
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
-	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -177,17 +234,37 @@ func TestDirectory_GetEmbeddedConnectorDetails_WaitsForNotEmptyPortFile(t *testi
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
-	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -229,17 +306,37 @@ func TestDirectory_GetEmbeddedConnectorDetails_WaitsForNotEmptyCertificateFile(t
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
-	expectedCertificate := []byte("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -277,13 +374,28 @@ func TestDirectory_GetEmbeddedConnectorDetails_TimesoutWaitingForFilesToExists(t
 	mockOSLayer := &mocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist)
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -306,14 +418,29 @@ func TestDirectory_GetEmbeddedConnectorDetails_TimesoutWaitingForFileContent(t *
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist) // Will be called multiple times in wait loop
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -344,14 +471,30 @@ func TestDirectory_GetEmbeddedConnectorDetails_ReadSecurePortFileError(t *testin
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -378,6 +521,50 @@ func TestDirectory_GetEmbeddedConnectorDetails_ReadSecurePortFileError(t *testin
 	assert.Empty(t, certificate)
 }
 
+func TestDirectory_GetEmbeddedConnectorDetails_StatSecurePortFileError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
+
+	securePortFile := dir.SecurePortFile()
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		Stat(securePortFile).
+		Return(nil, assert.AnError).
+		Once()
+
+	// Act
+	port, certificate, err := dir.GetEmbeddedConnectorDetails()
+
+	// Assert
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to stat secure port file")
+	assert.Empty(t, port)
+	assert.Empty(t, certificate)
+}
+
 func TestDirectory_GetEmbeddedConnectorDetails_ReadCertificateFileError(t *testing.T) {
 	// Arrange
 	mockOSLayer := &mocks.MockOSLayer{}
@@ -386,16 +573,31 @@ func TestDirectory_GetEmbeddedConnectorDetails_ReadCertificateFileError(t *testi
 	mockFileInfo := &osfacademocks.MockFileInfo{}
 	defer mockFileInfo.AssertExpectations(t)
 
-	sessionDir := "/tmp/matlab-session-12345"
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
 
-	dir := directory.NewDirectory(sessionDir, mockOSLayer)
-	dir.SetEmbeddedConnectorDetailsTimeout(100 * time.Millisecond)
-	dir.SetEmbeddedConnectorDetailsRetry(10 * time.Millisecond)
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	expectedPort := "9999"
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
 
 	securePortFile := dir.SecurePortFile()
 	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
 
-	expectedPort := "9999"
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	mockOSLayer.EXPECT().
 		Stat(securePortFile).
@@ -423,6 +625,138 @@ func TestDirectory_GetEmbeddedConnectorDetails_ReadCertificateFileError(t *testi
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to read certificate path file")
+	assert.Empty(t, port)
+	assert.Empty(t, certificate)
+}
+
+func TestDirectory_GetEmbeddedConnectorDetails_StatCertificateFileError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockFileInfo := &osfacademocks.MockFileInfo{}
+	defer mockFileInfo.AssertExpectations(t)
+
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
+
+	securePortFile := dir.SecurePortFile()
+	certificateFile := dir.CertificateFile()
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, os.ErrNotExist).
+		Once()
+
+	mockOSLayer.EXPECT().
+		Stat(securePortFile).
+		Return(mockFileInfo, nil).
+		Once()
+
+	mockOSLayer.EXPECT().
+		Stat(certificateFile).
+		Return(nil, assert.AnError).
+		Once()
+
+	// Act
+	port, certificate, err := dir.GetEmbeddedConnectorDetails()
+
+	// Assert
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to stat certificate file")
+	assert.Empty(t, port)
+	assert.Empty(t, certificate)
+}
+
+func TestDirectory_GetEmbeddedConnectorDetails_StartupErrorFileDetected(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+	startupErrorContent := "License checkout failed: No license available"
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
+
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return([]byte(startupErrorContent), nil).
+		Once()
+
+	// Act
+	port, certificate, err := dir.GetEmbeddedConnectorDetails()
+
+	// Assert
+	require.Error(t, err)
+	require.ErrorIs(t, err, directory.ErrMATLABStartup)
+	assert.Contains(t, err.Error(), "MATLAB startup failed")
+	assert.Contains(t, err.Error(), startupErrorContent)
+	assert.Empty(t, port)
+	assert.Empty(t, certificate)
+}
+
+func TestDirectory_GetEmbeddedConnectorDetails_StartupErrorFileReadError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockConfig := &mocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	embeddedConnectorDetailsRetry := 10 * time.Millisecond
+
+	mockConfig.EXPECT().
+		EmbeddedConnectorDetailsTimeout().
+		Return(100 * time.Millisecond).
+		Once()
+
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
+	dir.SetEmbeddedConnectorDetailsRetry(embeddedConnectorDetailsRetry)
+
+	startupErrorFile := dir.StartupErrorFile()
+
+	mockOSLayer.EXPECT().
+		ReadFile(startupErrorFile).
+		Return(nil, assert.AnError).
+		Once()
+
+	// Act
+	port, certificate, err := dir.GetEmbeddedConnectorDetails()
+
+	// Assert
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to read startup error file")
 	assert.Empty(t, port)
 	assert.Empty(t, certificate)
 }

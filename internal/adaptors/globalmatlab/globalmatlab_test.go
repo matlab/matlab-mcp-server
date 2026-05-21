@@ -12,26 +12,12 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
-	mockMATLABManager := &mocks.MockMATLABManager{}
-	defer mockMATLABManager.AssertExpectations(t)
-
-	mockMATLABRootSelector := &mocks.MockMATLABRootSelector{}
-	defer mockMATLABRootSelector.AssertExpectations(t)
-
-	mockMATLABStartingDirSelector := &mocks.MockMATLABStartingDirSelector{}
-	defer mockMATLABStartingDirSelector.AssertExpectations(t)
-
-	mockConfigFactory := &mocks.MockConfigFactory{}
-	defer mockConfigFactory.AssertExpectations(t)
+	mockMATLABManagerAdaptor := &mocks.MockMATLABManagerAdaptor{}
+	defer mockMATLABManagerAdaptor.AssertExpectations(t)
 
 	// Act
-	globalMATLABSession := globalmatlab.New(
-		mockMATLABManager,
-		mockMATLABRootSelector,
-		mockMATLABStartingDirSelector,
-		mockConfigFactory,
-	)
+	globalMATLAB := globalmatlab.New(mockMATLABManagerAdaptor)
 
 	// Assert
-	assert.NotNil(t, globalMATLABSession)
+	assert.NotNil(t, globalMATLAB)
 }

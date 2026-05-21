@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package pathvalidator_test
 
@@ -176,7 +176,8 @@ func TestValidator_ValidateMATLABScript_StatFails(t *testing.T) {
 
 	mockOsLayer.EXPECT().
 		Stat(testPath).
-		Return(nil, os.ErrNotExist)
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	validator := pathvalidator.New(mockOsLayer)
 
@@ -331,7 +332,8 @@ func TestValidator_ValidateFolderPath_StatFails(t *testing.T) {
 
 	mockOsLayer.EXPECT().
 		Stat(testPath).
-		Return(nil, os.ErrNotExist)
+		Return(nil, os.ErrNotExist).
+		Once()
 
 	validator := pathvalidator.New(mockOsLayer)
 

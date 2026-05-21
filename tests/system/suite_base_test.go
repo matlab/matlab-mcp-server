@@ -23,10 +23,11 @@ import (
 // SystemTestSuite provides common setup for system tests
 type SystemTestSuite struct {
 	suite.Suite
-	mcpServerPath string
-	matlabPath    string
-	testDataDir   string
-	defaultEnv    []string
+	mcpServerPath     string
+	matlabPath        string
+	testDataDir       string
+	pathEnvWithMATLAB string
+	defaultEnv        []string
 }
 
 type SystemSession struct {
@@ -145,6 +146,7 @@ func (s *SystemTestSuite) SetupTest() {
 	s.Require().Contains(path, s.matlabPath, "MATLAB directory should be in the PATH environment variable")
 
 	// Set as the default environment for tests to use
+	s.pathEnvWithMATLAB = path
 	s.defaultEnv = pathcontrol.UpdateEnvEntry(os.Environ(), "PATH", path)
 }
 
@@ -156,10 +158,7 @@ func (s *SystemTestSuite) SetupTest() {
 // Usage:
 //
 //	session := s.CreateMCPSession(ctx, nil, nil)
-//	defer func() {
-//		s.NoError(session.Close()) // assert in defer to avoid short-circuiting log dump
-//		session.DumpLogsOnFailure(s.T())
-//	}()
+//	defer s.CleanupSession(session, true)
 //
 // If env is nil, the suite's defaultEnv is used.
 func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, sessionOpts []mcpclient.CreateSessionOption, args ...string) *SystemSession {
@@ -186,7 +185,9 @@ func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, se
 		logFolderLocation = filepath.Join(base, "logs")
 		s.Require().NoError(os.MkdirAll(logFolderLocation, 0750), "should create log folder")
 		s.T().Cleanup(func() {
-			s.NoError(os.RemoveAll(base), "should remove log temp dir")
+			if err := os.RemoveAll(base); err != nil {
+				s.T().Logf("Failed to remove log temp dir (may be locked on Windows): %v", err)
+			}
 		})
 	}
 
@@ -208,6 +209,17 @@ func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, se
 		logDir:           logFolderLocation,
 		logFS:            os.DirFS(logFolderLocation),
 	}
+}
+
+func (s *SystemTestSuite) CleanupSession(session *SystemSession, assertNoErrorLogs bool) {
+	s.T().Helper()
+	if err := session.Close(); err != nil {
+		s.T().Logf("Ignoring session.Close() error (MCP go-sdk shutdown race): %v", err)
+	}
+	if assertNoErrorLogs {
+		s.AssertNoErrorLogs(session)
+	}
+	session.DumpLogsOnFailure(s.T())
 }
 
 // Test file paths

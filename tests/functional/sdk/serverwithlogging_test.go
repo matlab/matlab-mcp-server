@@ -35,15 +35,14 @@ func (s *ServerWithLoggingTestSuite) TestSDK_Logging_DependenciesAndToolsProvide
 	logFolder, err := os.MkdirTemp("", "server_session") // Can't use s.T().Tempdir() because too long for socket path
 	s.Require().NoError(err)
 	defer func() {
-		s.NoError(os.RemoveAll(logFolder), "should remove log folder")
+		if err := os.RemoveAll(logFolder); err != nil {
+			s.T().Logf("Failed to remove log folder (may be locked on Windows): %v", err)
+		}
 	}()
 
 	// This suite intentionally verifies logging behavior and may emit ERROR logs.
 	session := s.CreateSession(s.serverDetails.BinaryLocation(), nil, nil, "--log-folder="+logFolder)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, false)
 
 	// Act
 	_, err = session.CallTool(s.T().Context(), s.serverDetails.ToolThatLogsName(), map[string]any{"name": "World"})
@@ -73,17 +72,16 @@ func (s *ServerWithLoggingTestSuite) TestSDK_Logging_ToolHandlerLogsToFile() {
 	logFolder, err := os.MkdirTemp("", "server_session") // Can't use s.T().Tempdir() because too long for socket path
 	s.Require().NoError(err)
 	defer func() {
-		s.NoError(os.RemoveAll(logFolder), "should remove log folder")
+		if err := os.RemoveAll(logFolder); err != nil {
+			s.T().Logf("Failed to remove log folder (may be locked on Windows): %v", err)
+		}
 	}()
 
 	name := "World"
 
 	// This suite intentionally verifies logging behavior and may emit ERROR logs.
 	session := s.CreateSession(s.serverDetails.BinaryLocation(), nil, nil, "--log-folder="+logFolder)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, false)
 
 	// Act
 	_, err = session.CallTool(s.T().Context(), s.serverDetails.ToolThatLogsName(), map[string]any{"name": name})

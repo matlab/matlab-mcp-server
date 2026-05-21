@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	ErrInvalidRetryStrategy = errors.New("invalid retry strategy")
+	ErrInvalidRetryStrategy   = errors.New("invalid retry strategy")
+	ErrRetryStrategyExhausted = errors.New("exhausted retry strategy")
 )
 
 type RetryStrategy interface {
-	C() <-chan time.Time
+	C(ctx context.Context) <-chan time.Time
 	lock() // unexported to prevent external implementations; add new strategies to this package
 }
 
@@ -21,6 +22,7 @@ type RetryStrategy interface {
 //   - fn returns a non-nil error: stop immediately and return the error.
 //   - fn returns (output, true, nil): stop retrying and return output.
 //   - fn returns (_, false, nil): keep retrying.
+//   - The retry strategy is exhausted: stop and return ErrRetryStrategyExhausted.
 //   - ctx is canceled: stop and return ctx.Err() (or context.Cause if set).
 func Retry[OutputType any](ctx context.Context, fn func() (OutputType, bool, error), retryStrategy RetryStrategy) (OutputType, error) {
 	var zeroValue OutputType
@@ -33,7 +35,10 @@ func Retry[OutputType any](ctx context.Context, fn func() (OutputType, bool, err
 		return zeroValue, err
 	}
 
-	retryC := retryStrategy.C()
+	retryCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	retryC := retryStrategy.C(retryCtx)
 
 	for {
 		output, ok, err := fn()
@@ -46,10 +51,14 @@ func Retry[OutputType any](ctx context.Context, fn func() (OutputType, bool, err
 		}
 
 		select {
-		case <-retryC:
+		case _, ok := <-retryC:
+			if !ok {
+				// Channel closed, the strategy is exhausted
+				return zeroValue, ErrRetryStrategyExhausted
+			}
 			// Try again
-		case <-ctx.Done():
-			return zeroValue, context.Cause(ctx)
+		case <-retryCtx.Done():
+			return zeroValue, context.Cause(retryCtx)
 		}
 	}
 }

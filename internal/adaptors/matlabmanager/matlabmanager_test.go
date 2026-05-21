@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager_test
 
@@ -12,6 +12,9 @@ import (
 
 func TestNew_HappyPath(t *testing.T) {
 	// Arrange
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	mockMATLABServices := &mocks.MockMATLABServices{}
 	defer mockMATLABServices.AssertExpectations(t)
 
@@ -21,8 +24,11 @@ func TestNew_HappyPath(t *testing.T) {
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
 
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
+
 	// Act
-	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
 
 	// Assert
 	assert.NotNil(t, manager, "MATLABManager should not be nil")

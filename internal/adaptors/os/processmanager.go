@@ -3,11 +3,13 @@
 package os
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 )
 
@@ -56,15 +58,9 @@ func (pm *ProcessManager) WaitForProcessToComplete(processPid int) {
 			process.Wait() //nolint:gosec,errcheck // It doesn't matter why we stopped waiting
 		}
 	} else {
-		ticker := time.NewTicker(pm.checkParentAliveInterval)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			if pm.FindProcess(processPid) != nil {
-				continue
-			}
-			return
-		}
+		retry.Retry(context.Background(), func() (struct{}, bool, error) { //nolint:errcheck,gosec // Runs indefinitely until process exits
+			return struct{}{}, pm.FindProcess(processPid) == nil, nil
+		}, retry.NewLinearRetryStrategy(pm.checkParentAliveInterval))
 	}
 }
 

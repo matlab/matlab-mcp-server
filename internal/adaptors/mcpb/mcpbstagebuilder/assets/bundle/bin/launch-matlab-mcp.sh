@@ -25,14 +25,19 @@ if [[ ! -x "$BIN" ]]; then
   exit 1
 fi
 
+export MW_CONTEXT_TAGS="${MW_CONTEXT_TAGS:+$MW_CONTEXT_TAGS,}MATLAB:MCPB:V1"
+
 # Env var to CLI flag mappings (format: ENV_VAR:type:flag)
 # Types: string = pass value if non-empty, bool = pass flag if "true"
 MCPB_MAPPINGS=(
     "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_ROOT:string:--matlab-root"
     "__MATLAB_MCP_CORE_SERVER_MCPB_INITIAL_WD:string:--initial-working-folder"
+    "__MATLAB_MCP_CORE_SERVER_MCPB_LOG_DIR:string:--log-folder"
     "__MATLAB_MCP_CORE_SERVER_MCPB_INIT_ON_START:bool:--initialize-matlab-on-startup"
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISABLE_TELEM:bool:--disable-telemetry"
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE:string:--matlab-display-mode"
+    "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_SESSION_MODE:string:--matlab-session-mode"
+    "__MATLAB_MCP_CORE_SERVER_MCPB_EXTENSION_FILE:string:--extension-file"
 )
 
 ARGS=()

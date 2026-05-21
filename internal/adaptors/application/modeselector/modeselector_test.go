@@ -42,6 +42,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &modeselectormocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	// Act
 	modeSelectorInstance := modeselector.New(
 		mockConfigFactory,
@@ -52,6 +55,7 @@ func TestNew_HappyPath(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Assert
@@ -84,6 +88,9 @@ func TestStartAndWaitForCompletion_ConfigError(t *testing.T) {
 	mockLoggerFactory := &modeselectormocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
@@ -100,6 +107,7 @@ func TestStartAndWaitForCompletion_ConfigError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -138,6 +146,9 @@ func TestStartAndWaitForCompletion_GetGlobalLoggerError(t *testing.T) {
 	mockLoggerFactory := &modeselectormocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	expectedError := messages.AnError
 
 	mockConfigFactory.EXPECT().
@@ -159,6 +170,7 @@ func TestStartAndWaitForCompletion_GetGlobalLoggerError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -200,6 +212,9 @@ func TestStartAndWaitForCompletion_TelemetryError(t *testing.T) {
 	mockLogger := &entitiesmocks.MockLogger{}
 	defer mockLogger.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	expectedError := messages.AnError
 
 	mockLoggerFactory.EXPECT().
@@ -226,6 +241,7 @@ func TestStartAndWaitForCompletion_TelemetryError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -272,6 +288,9 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 	expectedVersion := "25.6.68"
@@ -338,6 +357,7 @@ func TestStartAndWaitForCompletion_VersionMode_HappyPath(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -384,6 +404,9 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 	expectedVersion := "25.6.68"
@@ -451,6 +474,7 @@ func TestStartAndWaitForCompletion_VersionMode_WriteError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -500,6 +524,9 @@ func TestStartAndWaitForCompletion_VersionMode_ShutdownError(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 	expectedVersion := "25.6.68"
@@ -575,6 +602,7 @@ func TestStartAndWaitForCompletion_VersionMode_ShutdownError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -618,6 +646,9 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 
@@ -669,6 +700,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_HappyPath(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -712,6 +744,9 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	watchdogError := assert.AnError
 	expectedCtx := t.Context()
@@ -773,6 +808,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -783,7 +819,7 @@ func TestStartAndWaitForCompletion_WatchdogMode_StartAndWaitError(t *testing.T) 
 	require.ErrorAs(t, err, &genericErr)
 }
 
-func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
+func TestStartAndWaitForCompletion_SetupMATLABMode_HappyPath(t *testing.T) {
 	// Arrange
 	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
 	defer mockConfigFactory.AssertExpectations(t)
@@ -817,6 +853,9 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 
@@ -854,6 +893,236 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 		Return(false).
 		Once()
 
+	mockConfig.EXPECT().
+		SetupMATLABMode().
+		Return(true).
+		Once()
+
+	mockSetupMATLAB.EXPECT().
+		StartAndWaitForCompletion(expectedCtx).
+		Return(nil).
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		RequestShutdown().
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		WaitForShutdownToComplete().
+		Return(nil).
+		Once()
+
+	modeSelectorInstance := modeselector.New(
+		mockConfigFactory,
+		mockParser,
+		mockTelemetryFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
+		mockOsLayer,
+		mockLifecycleSignaler,
+		mockLoggerFactory,
+		mockSetupMATLAB,
+	)
+
+	// Act
+	err := modeSelectorInstance.StartAndWaitForCompletion(expectedCtx)
+
+	// Assert
+	require.NoError(t, err, "StartAndWaitForCompletion should not return an error in install MATLAB add-on mode")
+}
+
+func TestStartAndWaitForCompletion_SetupMATLABMode_Error(t *testing.T) {
+	// Arrange
+	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockTelemetryFactory := &modeselectormocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
+
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
+
+	mockOsLayer := &modeselectormocks.MockOSLayer{}
+	defer mockOsLayer.AssertExpectations(t)
+
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockLoggerFactory := &modeselectormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockLogger := &entitiesmocks.MockLogger{}
+	defer mockLogger.AssertExpectations(t)
+
+	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
+	expectedError := messages.AnError
+	expectedCtx := t.Context()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordServerStart(expectedCtx).
+		Once()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		VersionMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		WatchdogMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		SetupMATLABMode().
+		Return(true).
+		Once()
+
+	mockSetupMATLAB.EXPECT().
+		StartAndWaitForCompletion(expectedCtx).
+		Return(expectedError).
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		RequestShutdown().
+		Once()
+
+	mockLifecycleSignaler.EXPECT().
+		WaitForShutdownToComplete().
+		Return(nil).
+		Once()
+
+	modeSelectorInstance := modeselector.New(
+		mockConfigFactory,
+		mockParser,
+		mockTelemetryFactory,
+		mockWatchdogProcess,
+		mockOrchestrator,
+		mockOsLayer,
+		mockLifecycleSignaler,
+		mockLoggerFactory,
+		mockSetupMATLAB,
+	)
+
+	// Act
+	err := modeSelectorInstance.StartAndWaitForCompletion(expectedCtx)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from SetupMATLAB")
+}
+
+func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
+	// Arrange
+	mockConfigFactory := &modeselectormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockTelemetryFactory := &modeselectormocks.MockTelemetryFactory{}
+	defer mockTelemetryFactory.AssertExpectations(t)
+
+	mockTelemetry := &telemetrymocks.MockTelemetry{}
+	defer mockTelemetry.AssertExpectations(t)
+
+	mockWatchdogProcess := &modeselectormocks.MockWatchdogProcess{}
+	defer mockWatchdogProcess.AssertExpectations(t)
+
+	mockOrchestrator := &modeselectormocks.MockOrchestrator{}
+	defer mockOrchestrator.AssertExpectations(t)
+
+	mockOsLayer := &modeselectormocks.MockOSLayer{}
+	defer mockOsLayer.AssertExpectations(t)
+
+	mockParser := &modeselectormocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockLoggerFactory := &modeselectormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockLogger := &entitiesmocks.MockLogger{}
+	defer mockLogger.AssertExpectations(t)
+
+	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
+	expectedCtx := t.Context()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockTelemetryFactory.EXPECT().
+		Telemetry().
+		Return(mockTelemetry, nil).
+		Once()
+
+	mockTelemetry.EXPECT().
+		RecordServerStart(expectedCtx).
+		Once()
+
+	mockConfig.EXPECT().
+		HelpMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		VersionMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		WatchdogMode().
+		Return(false).
+		Once()
+
+	mockConfig.EXPECT().
+		SetupMATLABMode().
+		Return(false).
+		Once()
+
 	mockOrchestrator.EXPECT().
 		StartAndWaitForCompletion(expectedCtx).
 		Return(nil).
@@ -868,6 +1137,7 @@ func TestStartAndWaitForCompletion_DefaultMode_HappyPath(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -912,6 +1182,9 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	orchestratorError := assert.AnError
 	expectedCtx := t.Context()
 
@@ -949,6 +1222,11 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 		Return(false).
 		Once()
 
+	mockConfig.EXPECT().
+		SetupMATLABMode().
+		Return(false).
+		Once()
+
 	mockOrchestrator.EXPECT().
 		StartAndWaitForCompletion(expectedCtx).
 		Return(orchestratorError).
@@ -972,6 +1250,7 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -1017,6 +1296,9 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitMessagesError(t *test
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
 
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
+
 	expectedError := messages.AnError
 	expectedCtx := t.Context()
 
@@ -1054,6 +1336,11 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitMessagesError(t *test
 		Return(false).
 		Once()
 
+	mockConfig.EXPECT().
+		SetupMATLABMode().
+		Return(false).
+		Once()
+
 	mockOrchestrator.EXPECT().
 		StartAndWaitForCompletion(expectedCtx).
 		Return(expectedError).
@@ -1068,6 +1355,7 @@ func TestStartAndWaitForCompletion_DefaultMode_StartAndWaitMessagesError(t *test
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -1114,6 +1402,9 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitHappyPath(t *testing.T) 
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	helpText := "Help me get my feet back on the ground."
 	expectedCtx := t.Context()
@@ -1175,6 +1466,7 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitHappyPath(t *testing.T) 
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -1218,6 +1510,9 @@ func TestStartAndWaitForCompletion_HelpMode_UsageError(t *testing.T) {
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	expectedCtx := t.Context()
 
@@ -1268,6 +1563,7 @@ func TestStartAndWaitForCompletion_HelpMode_UsageError(t *testing.T) {
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act
@@ -1314,6 +1610,9 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitWriteError(t *testing.T)
 
 	mockLifecycleSignaler := &modeselectormocks.MockLifecycleSignaler{}
 	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockSetupMATLAB := &modeselectormocks.MockSetupMATLAB{}
+	defer mockSetupMATLAB.AssertExpectations(t)
 
 	helpText := "Help me get my feet back on the ground."
 	writeError := assert.AnError
@@ -1376,6 +1675,7 @@ func TestStartAndWaitForCompletion_HelpMode_StartAndWaitWriteError(t *testing.T)
 		mockOsLayer,
 		mockLifecycleSignaler,
 		mockLoggerFactory,
+		mockSetupMATLAB,
 	)
 
 	// Act

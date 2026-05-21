@@ -12,19 +12,23 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/buildinfo"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/filesystem/files"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabrootselector"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabstartingdirselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabstartingdirselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	directory2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -36,6 +40,9 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/matlablocator/matlabversion"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionstore"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector/sessiondiscovery"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector/sessiondiscovery/appdatadir"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
 	server3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/server"
@@ -49,12 +56,16 @@ import (
 	startmatlabsession2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	stopmatlabsession2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	checkmatlabcode2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader/validator"
 	detectmatlabtoolboxes2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabcode3 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfile2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/resourcelimit"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/telemetry"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/telemetry/otel/instruments"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/telemetry/otel/meter/exporter"
@@ -66,8 +77,11 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/iofacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/registryfacade"
+	"github.com/matlab/matlab-mcp-core-server/internal/facades/unix"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool/functioncall"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
@@ -116,7 +130,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	matlabversionGetter := matlabversion.New(osFacade, ioFacade)
 	matlabLocator := matlablocator.New(getter, matlabversionGetter)
 	matlabFiles := matlabfiles.New()
-	factory3 := directory2.NewFactory(osFacade, directoryFactory, matlabFiles)
+	factory3 := directory2.NewFactory(osFacade, directoryFactory, matlabFiles, factory)
 	processDetails := processdetails.New(osFacade)
 	matlabProcessLauncher := processlauncher.New()
 	processFactory := process.New(osFacade, loggerFactory, directoryFactory, factory)
@@ -127,11 +141,15 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	matlabServices := matlabservices.New(matlabLocator, starter)
 	store := matlabsessionstore.New(loggerFactory, lifecycleSignaler)
 	matlabsessionclientFactory := matlabsessionclient.NewFactory(clientFactory)
-	matlabManager := matlabmanager.New(matlabServices, store, matlabsessionclientFactory)
+	appdatadirGetter := appdatadir.New(osFacade)
+	sessionDiscoverer := sessiondiscovery.New(appdatadirGetter, osFacade)
+	sessionSelector := sessionselector.New(factory, sessionDiscoverer)
+	matlabManager := matlabmanager.New(factory, matlabServices, store, matlabsessionclientFactory, sessionSelector)
 	matlabRootSelector := matlabrootselector.New(factory, matlabManager)
 	rootPathResolver := rootpathresolver.New(osFacade)
 	matlabStartingDirSelector := matlabstartingdirselector.New(factory, osFacade, rootStore, rootPathResolver)
-	globalMATLAB := globalmatlab.New(matlabManager, matlabRootSelector, matlabStartingDirSelector, factory)
+	sessionManager := sessionmanager.New(matlabManager, factory, matlabRootSelector, matlabStartingDirSelector)
+	globalMATLAB := globalmatlab.New(sessionManager)
 	sdkFactory := sdk.NewFactory(factory, serverDefinition, rootStore, loggerFactory, globalMATLAB)
 	usecase := listavailablematlabs.New(matlabManager)
 	tool := listavailablematlabs2.New(loggerFactory, usecase)
@@ -154,17 +172,28 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	runmatlabtestfileTool := runmatlabtestfile2.New(loggerFactory, runmatlabtestfileUsecase, globalMATLAB)
 	resource := codingguidelines.New(loggerFactory)
 	plaintextlivecodegenerationResource := plaintextlivecodegeneration.New(loggerFactory)
-	configuratorConfigurator := configurator.New(factory, serverDefinition, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource)
+	validatorValidator := validator.NewValidator()
+	loaderLoader := loader.NewLoader(osFacade, loggerFactory, validatorValidator)
+	assembler := functioncall.NewAssembler()
+	evalcustomtoolUsecase := evalcustomtool.New(assembler)
+	customFactory := custom.NewFactory(loaderLoader, loggerFactory, evalcustomtoolUsecase, globalMATLAB, factory)
+	configuratorConfigurator := configurator.New(factory, serverDefinition, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource, customFactory)
 	serverServer := server3.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
-	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory)
-	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory)
+	unixFacade := unix.New()
+	manager := resourcelimit.New(loggerFactory, unixFacade)
+	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory, manager)
+	installationSteps := installationsteps.New()
+	addonManager := addonmanager.New(installationSteps)
+	mode := setupmatlab.New(osFacade, messageCatalog, loggerFactory, directoryFactory, watchdog3, globalMATLAB, addonManager)
+	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory, mode)
 	application := &Application{
-		ModeSelector:        modeSelector,
-		MessageCatalog:      messageCatalog,
-		MATLABClientFactory: matlabsessionclientFactory,
-		HTTPClientFactory:   clientFactory,
-		HTTPServerFactory:   serverFactory,
-		LoggerFactory:       loggerFactory,
+		ModeSelector:              modeSelector,
+		MessageCatalog:            messageCatalog,
+		MATLABClientFactory:       matlabsessionclientFactory,
+		HTTPClientFactory:         clientFactory,
+		HTTPServerFactory:         serverFactory,
+		LoggerFactory:             loggerFactory,
+		LocalMATLABSessionStarter: starter,
 	}
 	return application
 }
@@ -178,6 +207,8 @@ type Application struct {
 	HTTPClientFactory   *client.Factory
 	HTTPServerFactory   *server.Factory
 	LoggerFactory       *logger.Factory
+	// Exposed for integration testing
+	LocalMATLABSessionStarter *localmatlabsession.Starter
 }
 
 type ApplicationDefinition interface {

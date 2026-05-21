@@ -363,7 +363,7 @@ func TestServer_StartAndWaitForCompletion_KnownError(t *testing.T) {
 	expectedName := "test-server"
 	expectedTitle := "Test Server"
 	expectedInstructions := "Test instructions"
-	expectedError := messages.New_StartupErrors_GenericInitializeFailure_Error()
+	expectedError := messages.AnError
 	expectedErrorMessage := "A known error occurred"
 	expectedFeatures := publictypes.Features{
 		MATLAB: publictypes.MATLABFeature{Enabled: true},

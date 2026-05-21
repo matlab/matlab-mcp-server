@@ -25,3 +25,8 @@ func UpdateRoots(cfg config.Config, logger entities.Logger, features definition.
 	s := &serverCallbackHandler{config: cfg, logger: logger, features: features, rootStore: rs, globalMATLAB: gm}
 	return s.updateRoots
 }
+
+func LogClientDetails(logger entities.Logger) func(MCPSession) {
+	s := &serverCallbackHandler{logger: logger}
+	return s.logClientDetails
+}

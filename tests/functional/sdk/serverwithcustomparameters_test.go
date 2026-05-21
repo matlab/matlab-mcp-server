@@ -43,11 +43,7 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_HappyPath(
 		"--"+s.serverDetails.CustomParamFlagName()+"="+expectedValue,
 		"--"+s.serverDetails.CustomRecordedParamFlagName()+"="+expectedRecordedValue,
 	)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		s.AssertNoErrorLogs(session)
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, true)
 
 	// Check for unstructured content output tool
 	result, err := session.CallTool(s.T().Context(), s.serverDetails.GreetToolName(), map[string]any{"name": "World"})
@@ -68,7 +64,7 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_HappyPath(
 	s.Require().NoError(err)
 	s.Equal(expectedValue, parsedValue.ParameterValue)
 
-	// Check recorded parameter is logged to stderr
+	// Check recorded parameter is logged
 	anyCharacterButNewLines := `[^\n]+`
 	configStateLogMessage := "Configuration state"
 	configStateRegExp, err := regexp.Compile(configStateLogMessage + anyCharacterButNewLines + expectedRecordedID + anyCharacterButNewLines + expectedRecordedValue)
@@ -78,10 +74,14 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_HappyPath(
 	defer cancel()
 
 	_, err = retry.Retry(ctx, func() (struct{}, bool, error) {
-		return struct{}{}, configStateRegExp.MatchString(session.Stderr()), nil
+		logContent, err := session.ReadServerLogs()
+		if err != nil {
+			return struct{}{}, false, err
+		}
+		return struct{}{}, configStateRegExp.MatchString(logContent), nil
 	}, retry.NewLinearRetryStrategy(200*time.Millisecond))
 
-	s.Require().NoError(err, "recorded parameter should be logged with expected value:\n\n%s", session.Stderr())
+	s.Require().NoError(err, "recorded parameter should be logged with expected value")
 }
 
 func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_Recorded_ByEnvVar() {
@@ -91,11 +91,7 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_Recorded_B
 
 	env := append(os.Environ(), s.serverDetails.CustomRecordedParamEnvVar()+"="+expectedRecordedValue)
 	session := s.CreateSession(s.serverDetails.BinaryLocation(), env, nil)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		s.AssertNoErrorLogs(session)
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, true)
 
 	// Check that the log features the custom parameter values
 	anyCharacterButNewLines := `[^\n]+`
@@ -107,8 +103,12 @@ func (s *ServerWithCustomParametersTestSuite) TestSDK_CustomParameter_Recorded_B
 	defer cancel()
 
 	_, err = retry.Retry(ctx, func() (struct{}, bool, error) {
-		return struct{}{}, configStateRegExp.MatchString(session.Stderr()), nil
+		logContent, err := session.ReadServerLogs()
+		if err != nil {
+			return struct{}{}, false, err
+		}
+		return struct{}{}, configStateRegExp.MatchString(logContent), nil
 	}, retry.NewLinearRetryStrategy(200*time.Millisecond))
 
-	s.Require().NoError(err, "custom recorded param should be logged with expected value:\n\n%s", session.Stderr())
+	s.Require().NoError(err, "custom recorded param should be logged with expected value")
 }

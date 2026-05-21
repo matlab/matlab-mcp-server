@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package matlabmanager_test
 
@@ -12,6 +12,7 @@ import (
 	sessionstoremocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabsessionstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMATLABManager_StopMATLABSession_HappyPath(t *testing.T) {
@@ -27,7 +28,14 @@ func TestMATLABManager_StopMATLABSession_HappyPath(t *testing.T) {
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
 
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
+
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	mockSessionClient := &sessionstoremocks.MockMATLABSessionClientWithCleanup{}
+	defer mockSessionClient.AssertExpectations(t)
 
 	expectedSessionID := entities.SessionID(123)
 	ctx := t.Context()
@@ -47,13 +55,13 @@ func TestMATLABManager_StopMATLABSession_HappyPath(t *testing.T) {
 		Return().
 		Once()
 
-	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
 
 	// Act
 	err := manager.StopMATLABSession(ctx, mockLogger, expectedSessionID)
 
 	// Assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestMATLABManager_StopMATLABSession_SessionStoreGetError(t *testing.T) {
@@ -69,6 +77,12 @@ func TestMATLABManager_StopMATLABSession_SessionStoreGetError(t *testing.T) {
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
 
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
+
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	expectedSessionID := entities.SessionID(123)
 	ctx := t.Context()
 	expectedError := assert.AnError
@@ -78,13 +92,13 @@ func TestMATLABManager_StopMATLABSession_SessionStoreGetError(t *testing.T) {
 		Return(nil, expectedError).
 		Once()
 
-	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
 
 	// Act
 	err := manager.StopMATLABSession(ctx, mockLogger, expectedSessionID)
 
 	// Assert
-	assert.ErrorIs(t, err, expectedError)
+	require.ErrorIs(t, err, expectedError)
 }
 
 func TestMATLABManager_StopMATLABSession_StopSessionError(t *testing.T) {
@@ -100,7 +114,14 @@ func TestMATLABManager_StopMATLABSession_StopSessionError(t *testing.T) {
 	mockClientFactory := &mocks.MockMATLABSessionClientFactory{}
 	defer mockClientFactory.AssertExpectations(t)
 
+	mockSessionSelector := &mocks.MockSessionSelector{}
+	defer mockSessionSelector.AssertExpectations(t)
+
+	mockConfigFactory := &mocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
 	mockSessionClient := &sessionstoremocks.MockMATLABSessionClientWithCleanup{}
+	defer mockSessionClient.AssertExpectations(t)
 
 	expectedSessionID := entities.SessionID(123)
 	ctx := t.Context()
@@ -121,11 +142,11 @@ func TestMATLABManager_StopMATLABSession_StopSessionError(t *testing.T) {
 		Return().
 		Once()
 
-	manager := matlabmanager.New(mockMATLABServices, mockSessionStore, mockClientFactory)
+	manager := matlabmanager.New(mockConfigFactory, mockMATLABServices, mockSessionStore, mockClientFactory, mockSessionSelector)
 
 	// Act
 	err := manager.StopMATLABSession(ctx, mockLogger, expectedSessionID)
 
 	// Assert
-	assert.ErrorIs(t, err, expectedError)
+	require.ErrorIs(t, err, expectedError)
 }

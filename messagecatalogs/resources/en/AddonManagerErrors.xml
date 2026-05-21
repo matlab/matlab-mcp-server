@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copyright 2026 The MathWorks, Inc. -->
+<rsccat version="1.0" locale="en_US" product="matlab-mcp-core-server">
+    <message>
+        <entry key="InstallFailed" context="error">Failed to install MATLAB Add-On. For details, see the server log in "{0}".</entry>
+    </message>
+</rsccat>

@@ -3,6 +3,7 @@
 /vendor
 /.env
 AGENTS.md
-.agents/
 CLAUDE.md
-.claude/
+.agents
+.claude
+matlab/matlab_mcp_toolbox/mcp/+matlab_mcp/

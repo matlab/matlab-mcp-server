@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	"context"
 	"time"
 
 	mock "github.com/stretchr/testify/mock"
@@ -38,16 +39,16 @@ func (_m *MockRetryStrategy) EXPECT() *MockRetryStrategy_Expecter {
 }
 
 // C provides a mock function for the type MockRetryStrategy
-func (_mock *MockRetryStrategy) C() <-chan time.Time {
-	ret := _mock.Called()
+func (_mock *MockRetryStrategy) C(ctx context.Context) <-chan time.Time {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for C")
 	}
 
 	var r0 <-chan time.Time
-	if returnFunc, ok := ret.Get(0).(func() <-chan time.Time); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) <-chan time.Time); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan time.Time)
@@ -62,13 +63,20 @@ type MockRetryStrategy_C_Call struct {
 }
 
 // C is a helper method to define mock.On call
-func (_e *MockRetryStrategy_Expecter) C() *MockRetryStrategy_C_Call {
-	return &MockRetryStrategy_C_Call{Call: _e.mock.On("C")}
+//   - ctx context.Context
+func (_e *MockRetryStrategy_Expecter) C(ctx interface{}) *MockRetryStrategy_C_Call {
+	return &MockRetryStrategy_C_Call{Call: _e.mock.On("C", ctx)}
 }
 
-func (_c *MockRetryStrategy_C_Call) Run(run func()) *MockRetryStrategy_C_Call {
+func (_c *MockRetryStrategy_C_Call) Run(run func(ctx context.Context)) *MockRetryStrategy_C_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -78,7 +86,7 @@ func (_c *MockRetryStrategy_C_Call) Return(timeCh <-chan time.Time) *MockRetrySt
 	return _c
 }
 
-func (_c *MockRetryStrategy_C_Call) RunAndReturn(run func() <-chan time.Time) *MockRetryStrategy_C_Call {
+func (_c *MockRetryStrategy_C_Call) RunAndReturn(run func(ctx context.Context) <-chan time.Time) *MockRetryStrategy_C_Call {
 	_c.Call.Return(run)
 	return _c
 }

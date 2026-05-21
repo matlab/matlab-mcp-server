@@ -226,6 +226,134 @@ func TestHandleInitialized_EagerMATLABInit_HappyPath(t *testing.T) {
 	assert.Empty(t, mockLogger.WarnLogs(), "no warnings should be logged on successful eager initialization")
 }
 
+func TestHandleInitialized_NilRequest(t *testing.T) {
+	// Arrange
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockRootStore := &mocks.MockRootStore{}
+	defer mockRootStore.AssertExpectations(t)
+
+	mockGlobalMATLAB := &mocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLAB.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	ctx := t.Context()
+	features := definition.Features{}
+
+	handler := sdk.HandleInitialized(mockConfig, mockLogger, features, mockRootStore, mockGlobalMATLAB)
+
+	// Act
+	handler(ctx, nil)
+
+	// Assert
+	// Assertions are verified via deferred mock expectations.
+}
+
+func TestHandleInitialized_NilSession(t *testing.T) {
+	// Arrange
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockRootStore := &mocks.MockRootStore{}
+	defer mockRootStore.AssertExpectations(t)
+
+	mockGlobalMATLAB := &mocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLAB.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	ctx := t.Context()
+	features := definition.Features{}
+
+	handler := sdk.HandleInitialized(mockConfig, mockLogger, features, mockRootStore, mockGlobalMATLAB)
+
+	// Act
+	handler(ctx, &mcp.InitializedRequest{})
+
+	// Assert
+	// Assertions are verified via deferred mock expectations.
+}
+
+func TestLogClientDetails_HappyPath(t *testing.T) {
+	// Arrange
+	mockSession := &mocks.MockMCPSession{}
+	defer mockSession.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	expectedClientName := "test-client"
+	expectedClientTitle := "Test Client"
+	expectedClientURL := "https://example.com"
+	expectedClientVersion := "1.2.3"
+
+	mockSession.EXPECT().
+		InitializeParams().
+		Return(&mcp.InitializeParams{
+			ClientInfo: &mcp.Implementation{
+				Name:       expectedClientName,
+				Title:      expectedClientTitle,
+				WebsiteURL: expectedClientURL,
+				Version:    expectedClientVersion,
+			},
+		}).
+		Once()
+
+	logClientDetails := sdk.LogClientDetails(mockLogger)
+
+	// Act
+	logClientDetails(mockSession)
+
+	// Assert
+	logs := mockLogger.InfoLogs()
+	fields, found := logs["New client session"]
+	require.True(t, found, "Expected info log for new client session")
+	assert.Equal(t, expectedClientName, fields["client-name"])
+	assert.Equal(t, expectedClientTitle, fields["client-title"])
+	assert.Equal(t, expectedClientURL, fields["client-url"])
+	assert.Equal(t, expectedClientVersion, fields["client-version"])
+}
+
+func TestLogClientDetails_NilInitializeParams(t *testing.T) {
+	// Arrange
+	mockSession := &mocks.MockMCPSession{}
+	defer mockSession.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockSession.EXPECT().
+		InitializeParams().
+		Return(nil).
+		Once()
+
+	logClientDetails := sdk.LogClientDetails(mockLogger)
+
+	// Act
+	logClientDetails(mockSession)
+
+	// Assert
+	assert.Empty(t, mockLogger.InfoLogs(), "No info logs should be emitted when InitializeParams is nil")
+}
+
+func TestLogClientDetails_NilClientInfo(t *testing.T) {
+	// Arrange
+	mockSession := &mocks.MockMCPSession{}
+	defer mockSession.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockSession.EXPECT().
+		InitializeParams().
+		Return(&mcp.InitializeParams{}).
+		Once()
+
+	logClientDetails := sdk.LogClientDetails(mockLogger)
+
+	// Act
+	logClientDetails(mockSession)
+
+	// Assert
+	assert.Empty(t, mockLogger.InfoLogs(), "No info logs should be emitted when ClientInfo is nil")
+}
+
 func TestHandleInitialized_EagerMATLABInit_MATLABFeatureDisabled(t *testing.T) {
 	// Arrange
 	mockConfig := &configmocks.MockConfig{}

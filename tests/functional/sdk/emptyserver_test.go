@@ -4,7 +4,9 @@ package sdk_test
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/tests/functional/sdk/testbinaries"
 	"github.com/stretchr/testify/suite"
@@ -46,7 +48,7 @@ func (s *EmptyServerTestSuite) TestSDK_EmptyServer_HasNoMATLABFlags() {
 		"--initialize-matlab-on-startup",
 		"--matlab-display-mode=desktop",
 	} {
-		s.T().Run(flag, func(t *testing.T) {
+		s.Run(flag, func() {
 			// Arrange
 
 			// Act
@@ -63,11 +65,7 @@ func (s *EmptyServerTestSuite) TestSDK_EmptyServer_HasNoMATLABFlags() {
 func (s *EmptyServerTestSuite) TestSDK_EmptyServer_NameTitleAndInstructionNoToolsAndNoResources() {
 	// Arrange
 	session := s.CreateSession(s.serverDetails.BinaryLocation(), nil, nil)
-	defer func() {
-		s.NoError(session.Close(), "closing session should not error") //nolint:testifylint // assert in defer to avoid FailNow
-		s.AssertNoErrorLogs(session)
-		session.DumpLogsOnFailure(s.T())
-	}()
+	defer s.CleanupSession(session, true)
 
 	// Act
 	result := session.InitializeResult()
@@ -89,4 +87,24 @@ func (s *EmptyServerTestSuite) TestSDK_EmptyServer_NameTitleAndInstructionNoTool
 
 	s.Require().NotNil(listResourcesResponse)
 	s.Empty(listResourcesResponse.Resources)
+
+	// Verify client info is logged
+	s.Eventually(func() bool {
+		logContent, err := session.ReadServerLogs()
+		if err != nil {
+			return false
+		}
+
+		foundClientSessionLog := strings.Contains(logContent, "New client session")
+		foundClientName := strings.Contains(logContent, session.ClientName())
+		foundClientVersion := strings.Contains(logContent, session.ClientVersion())
+		foundClientTitle := strings.Contains(logContent, session.ClientTitle())
+		foundClientURL := strings.Contains(logContent, session.ClientWebsiteURL())
+
+		return foundClientSessionLog &&
+			foundClientName &&
+			foundClientVersion &&
+			foundClientTitle &&
+			foundClientURL
+	}, 2*time.Second, 200*time.Millisecond)
 }

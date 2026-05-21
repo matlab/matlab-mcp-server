@@ -1,0 +1,12 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Blank Issue
+description: Create a new issue
+labels: ["needs-triage"]
+body:
+    - type: textarea
+      id: description
+      attributes:
+          label: Description
+          description: Add a description
+      validations:
+          required: false

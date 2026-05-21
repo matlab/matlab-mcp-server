@@ -46,6 +46,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
@@ -60,6 +63,7 @@ func TestNew_HappyPath(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Assert
@@ -92,6 +96,9 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
@@ -113,6 +120,7 @@ func TestOrchestrator_StartAndWaitForCompletion_ConfigError(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -151,6 +159,9 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
@@ -177,6 +188,7 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -184,6 +196,80 @@ func TestOrchestrator_StartAndWaitForCompletion_GetGlobalLoggerError(t *testing.
 
 	// Assert
 	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from GetGlobalLogger")
+}
+
+func TestOrchestrator_StartAndWaitForCompletion_CapOpenFilesLimitError(t *testing.T) {
+	// Arrange
+	mockLifecycleSignaler := &orchestratormocks.MockLifecycleSignaler{}
+	defer mockLifecycleSignaler.AssertExpectations(t)
+
+	mockApplicationDefinition := &orchestratormocks.MockApplicationDefinition{}
+	defer mockApplicationDefinition.AssertExpectations(t)
+
+	mockConfigFactory := &orchestratormocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	mockServer := &orchestratormocks.MockServer{}
+	defer mockServer.AssertExpectations(t)
+
+	mockWatchdogClient := &orchestratormocks.MockWatchdogClient{}
+	defer mockWatchdogClient.AssertExpectations(t)
+
+	mockLoggerFactory := &orchestratormocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockSignalLayer := &orchestratormocks.MockOSSignaler{}
+	defer mockSignalLayer.AssertExpectations(t)
+
+	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
+	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
+	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+	ctx := t.Context()
+	expectedError := assert.AnError
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(nil, expectedError).
+		Once()
+
+	orchestratorInstance := orchestrator.New(
+		mockMessageCatalog,
+		mockLifecycleSignaler,
+		mockApplicationDefinition,
+		mockConfigFactory,
+		mockServer,
+		mockWatchdogClient,
+		mockLoggerFactory,
+		mockSignalLayer,
+		mockDirectoryFactory,
+		mockResourceLimitManager,
+	)
+
+	// Act
+	err := orchestratorInstance.StartAndWaitForCompletion(ctx)
+
+	// Assert
+	require.ErrorIs(t, err, expectedError, "StartAndWaitForCompletion should return the error from CapOpenFilesLimit")
 }
 
 func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
@@ -215,6 +301,9 @@ func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockMessageCatalog := &definitionmocks.MockMessageCatalog{}
 	defer mockMessageCatalog.AssertExpectations(t)
 
@@ -230,6 +319,16 @@ func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -267,6 +366,7 @@ func TestOrchestrator_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -305,6 +405,9 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -313,7 +416,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 
 	mockLogger := testutils.NewInspectableLogger()
 	ctx := t.Context()
-	expectedError := messages.AnError
+	expectedError := assert.AnError
 
 	mockConfigFactory.EXPECT().
 		Config().
@@ -323,6 +426,16 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -370,6 +483,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStartError(t *testing.T)
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -408,6 +522,9 @@ func TestOrchestrator_StartAndWaitForCompletion_DependenciesError(t *testing.T) 
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -427,6 +544,16 @@ func TestOrchestrator_StartAndWaitForCompletion_DependenciesError(t *testing.T) 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -479,6 +606,7 @@ func TestOrchestrator_StartAndWaitForCompletion_DependenciesError(t *testing.T) 
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -517,6 +645,9 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -537,15 +668,30 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	expectedDependenciesProviderResources := definition.NewDependenciesProviderResources(mockLogger, mockConfig, mockMessageCatalog, mockWatchdogClient)
 	expectedToolProviderResources := definition.NewToolsProviderResources(mockLogger, mockConfig, mockMessageCatalog, expectedDependencies, mockLoggerFactory)
 	expectedTools := []tools.Tool{mockTool}
+	expectedVersion := "test-version"
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
 		Once()
 
+	wasResetOpenFilesCapCalled := false
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error {
+			wasResetOpenFilesCapCalled = true
+			return nil
+		}, nil).
+		Once()
+
 	mockConfigFactory.EXPECT().
 		Config().
 		Return(mockConfig, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return(expectedVersion).
 		Once()
 
 	mockConfig.EXPECT().
@@ -618,6 +764,7 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -632,6 +779,12 @@ func TestOrchestrator_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 
 	// Assert
 	require.NoError(t, <-errC, "StartAndWaitForCompletion should not return an error on signal interrupt")
+
+	logs := mockLogger.InfoLogs()
+	fields, found := logs["Initiating application startup"]
+	require.True(t, found, "Expected info log for application startup")
+	require.True(t, wasResetOpenFilesCapCalled, "Expected to see CapOpenFilesLimit callback to be called")
+	assert.Equal(t, expectedVersion, fields["version"])
 }
 
 func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
@@ -663,6 +816,9 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -683,9 +839,19 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 		Return(mockLogger, nil).
 		Once()
 
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
 	mockConfigFactory.EXPECT().
 		Config().
 		Return(mockConfig, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -753,13 +919,14 @@ func TestOrchestrator_StartAndWaitForCompletion_ServerError(t *testing.T) {
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
 	err := orchestratorInstance.StartAndWaitForCompletion(ctx)
 
 	// Assert
-	assert.ErrorIs(t, err, expectedError, "Error should be the server error")
+	require.ErrorIs(t, err, expectedError, "Error should be the server error")
 }
 
 func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t *testing.T) {
@@ -791,6 +958,9 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -811,9 +981,19 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 		Return(mockLogger, nil).
 		Once()
 
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
 	mockConfigFactory.EXPECT().
 		Config().
 		Return(mockConfig, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -881,6 +1061,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WaitForShutdownToCompleteError(t
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act
@@ -937,6 +1118,9 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 	mockDirectoryFactory := &orchestratormocks.MockDirectoryFactory{}
 	defer mockDirectoryFactory.AssertExpectations(t)
 
+	mockResourceLimitManager := &orchestratormocks.MockResourceLimitManager{}
+	defer mockResourceLimitManager.AssertExpectations(t)
+
 	mockDirectory := &directorymocks.MockDirectory{}
 	defer mockDirectory.AssertExpectations(t)
 
@@ -956,9 +1140,19 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 		Return(mockLogger, nil).
 		Once()
 
+	mockResourceLimitManager.EXPECT().
+		CapOpenFilesLimit(orchestrator.UnixOpenFileDescriptorsSoftCap).
+		Return(func() error { return nil }, nil).
+		Once()
+
 	mockConfigFactory.EXPECT().
 		Config().
 		Return(mockConfig, nil).
+		Once()
+
+	mockConfig.EXPECT().
+		Version().
+		Return("test-version").
 		Once()
 
 	mockConfig.EXPECT().
@@ -1037,6 +1231,7 @@ func TestOrchestrator_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) 
 		mockLoggerFactory,
 		mockSignalLayer,
 		mockDirectoryFactory,
+		mockResourceLimitManager,
 	)
 
 	// Act

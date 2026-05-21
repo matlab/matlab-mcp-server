@@ -12,6 +12,8 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
+const startupCode = "sessionPath = getenv('MW_MCP_SESSION_DIR');addpath(sessionPath);matlab_mcp.initializeMCP(); clear sessionPath;"
+
 type SessionDirectoryFactory interface {
 	New(logger entities.Logger) (directory.Directory, error)
 }
@@ -39,13 +41,13 @@ type Starter struct {
 
 func NewStarter(
 	directoryFactory SessionDirectoryFactory,
-	procesDetails ProcessDetails,
+	processDetails ProcessDetails,
 	matlabProcessLauncher MATLABProcessLauncher,
 	watchdog Watchdog,
 ) *Starter {
 	return &Starter{
 		directoryFactory:      directoryFactory,
-		processDetails:        procesDetails,
+		processDetails:        processDetails,
 		matlabProcessLauncher: matlabProcessLauncher,
 		watchdog:              watchdog,
 	}
@@ -77,31 +79,48 @@ func (m *Starter) StartLocalMATLABSession(ctx context.Context, logger entities.L
 		sessionDir.CertificateKeyFile(),
 	)
 
-	startupCode := "sessionPath = '" + sessionDirPath + "';addpath(sessionPath);matlab_mcp.initializeMCP();clear sessionPath;"
-
 	startupFlags := m.processDetails.StartupFlag(runtime.GOOS, request.ShowMATLABDesktop, startupCode)
 
 	processID, processCleanup, _, err := m.matlabProcessLauncher.Launch(ctx, logger, sessionDirPath, request.MATLABRoot, request.StartingDirectory, startupFlags, env)
 	if err != nil {
+		if cleanupErr := sessionDir.Cleanup(); cleanupErr != nil {
+			logger.WithError(cleanupErr).Warn("Failed to cleanup session directory after launch error")
+		}
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}
+
+	logger = logger.With("pid", processID)
+	logger.Debug("Started MATLAB process")
+
+	cleanup := func() error {
+		if processCleanup != nil {
+			processCleanup()
+		}
+		return sessionDir.Cleanup()
+	}
+
+	logger.Debug("Registering process with watchdog")
 
 	if err = m.watchdog.RegisterProcessPIDWithWatchdog(processID); err != nil {
 		logger.WithError(err).Warn("Failed to register process with watchdog")
 	}
 
+	logger.Debug("Retrieving EC details")
+
 	securePort, certificatePEM, err := sessionDir.GetEmbeddedConnectorDetails()
 	if err != nil {
+		if cleanupErr := cleanup(); cleanupErr != nil {
+			logger.WithError(cleanupErr).Warn("Failed to cleanup after startup error")
+		}
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}
 
+	logger.Debug("Retrieved EC details")
+
 	return embeddedconnector.ConnectionDetails{
-			Host:           "localhost",
-			Port:           securePort,
-			APIKey:         uniqueAPIKey,
-			CertificatePEM: certificatePEM,
-		}, func() error {
-			processCleanup()
-			return sessionDir.Cleanup()
-		}, nil
+		Host:           "localhost",
+		Port:           securePort,
+		APIKey:         uniqueAPIKey,
+		CertificatePEM: certificatePEM,
+	}, cleanup, nil
 }

@@ -86,3 +86,47 @@ func (_c *MockTool_AddToServer_Call) RunAndReturn(run func(server *mcp.Server) e
 	_c.Call.Return(run)
 	return _c
 }
+
+// Name provides a mock function for the type MockTool
+func (_mock *MockTool) Name() string {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Name")
+	}
+
+	var r0 string
+	if returnFunc, ok := ret.Get(0).(func() string); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	return r0
+}
+
+// MockTool_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
+type MockTool_Name_Call struct {
+	*mock.Call
+}
+
+// Name is a helper method to define mock.On call
+func (_e *MockTool_Expecter) Name() *MockTool_Name_Call {
+	return &MockTool_Name_Call{Call: _e.mock.On("Name")}
+}
+
+func (_c *MockTool_Name_Call) Run(run func()) *MockTool_Name_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockTool_Name_Call) Return(s string) *MockTool_Name_Call {
+	_c.Call.Return(s)
+	return _c
+}
+
+func (_c *MockTool_Name_Call) RunAndReturn(run func() string) *MockTool_Name_Call {
+	_c.Call.Return(run)
+	return _c
+}

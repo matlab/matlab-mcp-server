@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/fakematlab"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
@@ -103,4 +104,16 @@ func ToFileURI(dir string) string {
 // NewRootFromDir creates an mcp.Root from a local directory path.
 func NewRootFromDir(dir, name string) *mcp.Root {
 	return &mcp.Root{URI: ToFileURI(dir), Name: name}
+}
+
+// WaitForStartupInfo polls the fake MATLAB output file until startup info is available.
+func (s *MCPTestSuite) WaitForStartupInfo() fakematlab.StartupInfo {
+	s.T().Helper()
+	var startupInfo fakematlab.StartupInfo
+	s.Require().Eventually(func() bool {
+		info, err := s.FakeMatlab().ReadStartupInfo()
+		startupInfo = info
+		return err == nil
+	}, 30*time.Second, 500*time.Millisecond, "fake MATLAB should have written its startup info")
+	return startupInfo
 }

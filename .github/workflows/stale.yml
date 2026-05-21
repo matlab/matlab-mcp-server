@@ -1,0 +1,31 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Auto-close stale waiting-for-info issues
+on:
+    schedule:
+        - cron: "0 14 * * *" # Daily at 14:00 UTC
+    workflow_dispatch:
+
+permissions:
+    issues: write
+
+jobs:
+    stale:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/stale@v9
+              with:
+                  stale-issue-label: "stale"
+                  only-labels: "waiting-for-info"
+                  days-before-stale: 7
+                  days-before-close: 7
+                  days-before-pr-stale: -1
+                  days-before-pr-close: -1
+                  remove-stale-when-updated: true
+                  stale-issue-message: >
+                      We are still waiting on the information requested above. If we
+                      don't hear back within 7 days, this issue will automatically be
+                      closed.
+                  close-issue-message: >
+                      This issue has been automatically closed due to inactivity. If
+                      you're still experiencing this problem, please reopen the issue and
+                      include the information that will help us investigate.

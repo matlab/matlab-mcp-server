@@ -4,61 +4,41 @@ package globalmatlab
 
 import (
 	"context"
+	"errors"
 	"sync"
 
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/config"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
-type ConfigFactory interface {
-	Config() (config.Config, messages.Error)
-}
+var (
+	ErrLostMATLABConnection = errors.New("lost connection to specified existing MATLAB session")
+)
 
-type MATLABManager interface {
-	StartMATLABSession(ctx context.Context, sessionLogger entities.Logger, startRequest entities.SessionDetails) (entities.SessionID, error)
+type MATLABManagerAdaptor interface {
+	StartSession(ctx context.Context, logger entities.Logger) (entities.SessionID, error)
+	ShouldRestart() (bool, messages.Error)
 	StopMATLABSession(ctx context.Context, sessionLogger entities.Logger, sessionID entities.SessionID) error
 	GetMATLABSessionClient(ctx context.Context, sessionLogger entities.Logger, sessionID entities.SessionID) (entities.MATLABSessionClient, error)
 }
 
-type MATLABRootSelector interface {
-	SelectMATLABRoot(ctx context.Context, logger entities.Logger) (string, error)
-}
-
-type MATLABStartingDirSelector interface {
-	SelectMatlabStartingDir(logger entities.Logger) (string, error)
-}
-
 type GlobalMATLAB struct {
-	matlabManager             MATLABManager
-	matlabRootSelector        MATLABRootSelector
-	matlabStartingDirSelector MATLABStartingDirSelector
-	configFactory             ConfigFactory
+	matlabManagerAdaptor MATLABManagerAdaptor
 
-	lock *sync.Mutex
+	lock              *sync.Mutex
+	startSessionError error
 
-	initOnce  *sync.Once
-	initError error
-
-	matlabRoot        string
-	matlabStartingDir string
-	sessionID         entities.SessionID
+	sessionID entities.SessionID
 }
 
 func New(
-	matlabManager MATLABManager,
-	matlabRootSelector MATLABRootSelector,
-	matlabStartingDirSelector MATLABStartingDirSelector,
-	configFactory ConfigFactory,
+	matlabManagerAdaptor MATLABManagerAdaptor,
 ) *GlobalMATLAB {
 	return &GlobalMATLAB{
-		matlabManager:             matlabManager,
-		matlabRootSelector:        matlabRootSelector,
-		matlabStartingDirSelector: matlabStartingDirSelector,
-		configFactory:             configFactory,
+		matlabManagerAdaptor: matlabManagerAdaptor,
 
-		lock:     &sync.Mutex{},
-		initOnce: &sync.Once{},
+		lock: &sync.Mutex{},
 	}
 }
 
@@ -66,15 +46,8 @@ func (g *GlobalMATLAB) Client(ctx context.Context, logger entities.Logger) (enti
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	g.initOnce.Do(func() {
-		err := g.initializeStartupConfig(ctx, logger)
-		if err != nil {
-			g.initError = err
-		}
-	})
-
-	if g.initError != nil {
-		return nil, g.initError
+	if g.startSessionError != nil {
+		return nil, g.startSessionError
 	}
 
 	return g.getOrCreateClient(ctx, logger)
@@ -85,65 +58,61 @@ func (g *GlobalMATLAB) getOrCreateClient(ctx context.Context, logger entities.Lo
 
 	// Start MATLAB if we don't have a session
 	if g.sessionID == sessionIDZeroValue {
-		if err := g.startNewSession(ctx, logger); err != nil {
-			g.initError = err
+		sessionID, err := g.startMATLABSessionAndCacheUnrecoverableErrors(ctx, logger)
+		if err != nil {
 			return nil, err
 		}
+		g.sessionID = sessionID
 	}
 
 	// Try to get the client
-	client, err := g.matlabManager.GetMATLABSessionClient(ctx, logger, g.sessionID)
+	client, err := g.matlabManagerAdaptor.GetMATLABSessionClient(ctx, logger, g.sessionID)
 	if err != nil {
 		// Retry: stop old session and start a new one
-		if stopErr := g.matlabManager.StopMATLABSession(ctx, logger, g.sessionID); stopErr != nil {
+		if stopErr := g.matlabManagerAdaptor.StopMATLABSession(ctx, logger, g.sessionID); stopErr != nil {
 			logger.WithError(stopErr).Warn("failed to stop MATLAB session")
 		}
 
-		if err := g.startNewSession(ctx, logger); err != nil {
-			g.initError = err
+		sessionID, err := g.restartMATLABSession(ctx, logger)
+		if err != nil {
+			g.sessionID = sessionIDZeroValue
 			return nil, err
 		}
+		g.sessionID = sessionID
 
-		return g.matlabManager.GetMATLABSessionClient(ctx, logger, g.sessionID)
+		return g.matlabManagerAdaptor.GetMATLABSessionClient(ctx, logger, g.sessionID)
 	}
 
 	return client, nil
 }
 
-func (g *GlobalMATLAB) startNewSession(ctx context.Context, logger entities.Logger) error {
-	config, messagesErr := g.configFactory.Config()
+func (g *GlobalMATLAB) restartMATLABSession(ctx context.Context, logger entities.Logger) (entities.SessionID, error) {
+	var sessionIDZeroValue entities.SessionID
+
+	shouldRestart, messagesErr := g.matlabManagerAdaptor.ShouldRestart()
 	if messagesErr != nil {
-		return messagesErr
+		g.startSessionError = messagesErr
+		return sessionIDZeroValue, messagesErr
 	}
 
-	sessionID, err := g.matlabManager.StartMATLABSession(ctx, logger, entities.LocalSessionDetails{
-		MATLABRoot:             g.matlabRoot,
-		IsStartingDirectorySet: g.matlabStartingDir != "",
-		StartingDirectory:      g.matlabStartingDir,
-		ShowMATLABDesktop:      config.ShouldShowMATLABDesktop(),
-	})
-	if err != nil {
-		return err
+	if !shouldRestart {
+		g.startSessionError = ErrLostMATLABConnection
+		return sessionIDZeroValue, ErrLostMATLABConnection
 	}
 
-	g.sessionID = sessionID
-	return nil
+	return g.startMATLABSessionAndCacheUnrecoverableErrors(ctx, logger)
 }
 
-func (g *GlobalMATLAB) initializeStartupConfig(ctx context.Context, logger entities.Logger) error {
-	matlabRoot, err := g.matlabRootSelector.SelectMATLABRoot(ctx, logger)
+func (g *GlobalMATLAB) startMATLABSessionAndCacheUnrecoverableErrors(ctx context.Context, logger entities.Logger) (entities.SessionID, error) {
+	var sessionIDZeroValue entities.SessionID
+
+	sessionID, err := g.matlabManagerAdaptor.StartSession(ctx, logger)
 	if err != nil {
-		return err
+		if !errors.Is(err, sessionmanager.ErrFailedToAttachToMATLABSession) {
+			g.startSessionError = err
+		}
+		return sessionIDZeroValue, err
 	}
 
-	g.matlabRoot = matlabRoot
-
-	matlabStartingDirectory, err := g.matlabStartingDirSelector.SelectMatlabStartingDir(logger)
-	if err != nil {
-		logger.WithError(err).Warn("failed to determine MATLAB starting directory, proceeding without one")
-		return nil
-	}
-
-	g.matlabStartingDir = matlabStartingDirectory
-	return nil
+	return sessionID, nil
 }

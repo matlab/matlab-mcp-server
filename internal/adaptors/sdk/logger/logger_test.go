@@ -3,11 +3,11 @@
 package logger_test
 
 import (
-	"errors"
 	"testing"
 
 	loggeradaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/sdk/logger"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -151,7 +151,7 @@ func TestLogger_WithError(t *testing.T) {
 	mockNewLogger := &entitiesmocks.MockLogger{}
 	defer mockNewLogger.AssertExpectations(t)
 
-	expectedError := errors.New("test error")
+	expectedError := assert.AnError
 	expectedMessage := "test message"
 
 	mockLogger.EXPECT().

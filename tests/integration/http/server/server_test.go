@@ -26,7 +26,9 @@ func TestHTTPServerFactory_NewServerOverUDS_HappyPath(t *testing.T) {
 	testDataDir, err := os.MkdirTemp("", "mcp_test") //nolint:usetesting // We can't use t.TempDir() here, as it sometimes creates path that are too long for socket paths
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, os.RemoveAll(testDataDir))
+		if err := os.RemoveAll(testDataDir); err != nil {
+			t.Logf("Failed to remove test data dir (may be locked on Windows): %v", err)
+		}
 	}()
 
 	socketPath := filepath.Join(testDataDir, "test.sock")

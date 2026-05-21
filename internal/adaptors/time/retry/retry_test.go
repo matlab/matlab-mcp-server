@@ -110,6 +110,21 @@ func TestRetry_ReturnsContextCancelCauseError(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestRetry_ReturnsExhaustedErrorWhenStrategyExhausted(t *testing.T) {
+	// Arrange
+	fn := func() (string, bool, error) {
+		return "", false, nil
+	}
+	retryStrategy := retry.NewFixedCountRetryStrategy(3)
+
+	// Act
+	result, err := retry.Retry(t.Context(), fn, retryStrategy)
+
+	// Assert
+	require.ErrorIs(t, err, retry.ErrRetryStrategyExhausted)
+	assert.Empty(t, result)
+}
+
 func TestRetry_ReturnsErrorForNilRetryStrategy(t *testing.T) {
 	// Arrange
 	fn := func() (string, bool, error) {

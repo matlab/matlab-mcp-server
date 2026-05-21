@@ -2,6 +2,7 @@
 
 all: true
 filename: "{{.InterfaceName}}.go"
+log-level: error
 pkgname: "mocks"
 packages:
     github.com/matlab/matlab-mcp-core-server/internal:

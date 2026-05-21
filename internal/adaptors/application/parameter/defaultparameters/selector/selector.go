@@ -37,8 +37,10 @@ func (s *Selector) DefaultParameters() []entities.Parameter {
 	parameterDefs := []parameter.ParameterWithDescriptionFromMessageCatalog{
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
+		defaultparameters.SetupMATLABMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.LogLevel(),
+		defaultparameters.DuplicateLogsToStderr(),
 		defaultparameters.WatchdogMode(),
 		defaultparameters.ServerInstanceID(),
 		defaultparameters.DisableTelemetry(),
@@ -53,6 +55,12 @@ func (s *Selector) DefaultParameters() []entities.Parameter {
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.InitializeMATLABOnStartup(),
 		defaultparameters.MATLABDisplayMode(),
+		defaultparameters.MATLABSessionMode(),
+		defaultparameters.MATLABSessionConnectionDetails(),
+		defaultparameters.MATLABSessionConnectionTimeout(),
+		defaultparameters.MATLABSessionDiscoveryTimeout(),
+		defaultparameters.EmbeddedConnectorDetailsTimeout(),
+		defaultparameters.ExtensionFile(),
 	}
 
 	matlabFeature := s.applicationDefinition.Features().MATLAB
@@ -66,7 +74,10 @@ func (s *Selector) DefaultParameters() []entities.Parameter {
 
 	parameters := make([]entities.Parameter, len(parameterDefs))
 	for i, parameterDef := range parameterDefs {
-		s.resolveDescription(parameterDef)
+		// Only resolve the description of not hidden (visible) flags
+		if !parameterDef.GetHiddenFlag() {
+			s.resolveDescription(parameterDef)
+		}
 		parameters[i] = parameterDef
 	}
 	return parameters

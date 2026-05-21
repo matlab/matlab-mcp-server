@@ -11,19 +11,23 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/buildinfo"
 	files "github.com/matlab/matlab-mcp-core-server/internal/adaptors/filesystem/files"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabrootselector"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/matlabstartingdirselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabstartingdirselector"
 	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	httpserver "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	localmatlabsessiondirectory "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -35,6 +39,9 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/matlablocator/matlabversion"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionclient"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabsessionstore"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector/sessiondiscovery"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/sessionselector/sessiondiscovery/appdatadir"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/baseresource"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/codingguidelines"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/resources/plaintextlivecodegeneration"
@@ -50,6 +57,9 @@ import (
 	startmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	stopmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	checkmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom"
+	customloader "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader"
+	customvalidator "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader/validator"
 	detectmatlabtoolboxessinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
@@ -67,8 +77,12 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/iofacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/registryfacade"
+	unixfacade "github.com/matlab/matlab-mcp-core-server/internal/facades/unix"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/resourcelimit"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/checkmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool/functioncall"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
@@ -91,6 +105,8 @@ type Application struct {
 	HTTPClientFactory   *httpclient.Factory
 	HTTPServerFactory   *httpserver.Factory
 	LoggerFactory       *logger.Factory
+	// Exposed for integration testing
+	LocalMATLABSessionStarter *localmatlabsession.Starter
 }
 
 type ApplicationDefinition interface {
@@ -118,6 +134,24 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(modeselector.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(modeselector.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
 		wire.Bind(new(modeselector.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(modeselector.SetupMATLAB), new(*setupmatlab.Mode)),
+
+		// Setup MATLAB
+		setupmatlab.New,
+		wire.Bind(new(setupmatlab.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(setupmatlab.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(setupmatlab.DirectoryFactory), new(*directory.Factory)),
+		wire.Bind(new(setupmatlab.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		wire.Bind(new(setupmatlab.WatchdogClient), new(*watchdogclient.Watchdog)),
+		wire.Bind(new(setupmatlab.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
+		wire.Bind(new(setupmatlab.AddonManager), new(*addonmanager.AddonManager)),
+
+		// Add-On Manager
+		addonmanager.New,
+		wire.Bind(new(addonmanager.InstallationSteps), new(*installationsteps.InstallationSteps)),
+
+		// Add-On Manager Installation Steps
+		installationsteps.New,
 
 		// Telemetry
 		telemetry.NewFactory,
@@ -177,6 +211,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(orchestrator.LoggerFactory), new(*logger.Factory)),
 		wire.Bind(new(orchestrator.OSSignaler), new(*osadaptor.ProcessManager)),
 		wire.Bind(new(orchestrator.DirectoryFactory), new(*directory.Factory)),
+		wire.Bind(new(orchestrator.ResourceLimitManager), new(*resourcelimit.Manager)),
 
 		// MCP Server
 		server.New,
@@ -204,6 +239,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		configurator.New,
 		wire.Bind(new(configurator.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(configurator.ApplicationDefinition), new(ApplicationDefinition)),
+		wire.Bind(new(configurator.CustomToolFactory), new(*custom.Factory)),
 
 		// Tools
 		wire.Bind(new(basetool.LoggerFactory), new(*logger.Factory)),
@@ -262,6 +298,24 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		runmatlabtestfile.New,
 		wire.Bind(new(runmatlabtestfile.PathValidator), new(*pathvalidator.PathValidator)),
 
+		// Custom Tool Factory
+		custom.NewFactory,
+		wire.Bind(new(custom.Loader), new(*customloader.Loader)),
+		wire.Bind(new(custom.ConfigFactory), new(*config.Factory)),
+
+		// Custom Tool Loader
+		customloader.NewLoader,
+		wire.Bind(new(customloader.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(customloader.LoggerFactory), new(*logger.Factory)),
+		customvalidator.NewValidator,
+		wire.Bind(new(customloader.ToolValidator), new(*customvalidator.Validator)),
+
+		// EvalCustomTool Use Case
+		evalcustomtool.New,
+		wire.Bind(new(evalcustomtool.FunctionCallAssembler), new(*functioncall.Assembler)),
+		functioncall.NewAssembler,
+		wire.Bind(new(custom.Usecase), new(*evalcustomtool.Usecase)),
+
 		// Resources
 		wire.Bind(new(baseresource.LoggerFactory), new(*logger.Factory)),
 
@@ -290,10 +344,14 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		// Global MATLAB
 		globalmatlab.New,
-		wire.Bind(new(globalmatlab.MATLABManager), new(*matlabmanager.MATLABManager)),
-		wire.Bind(new(globalmatlab.MATLABRootSelector), new(*matlabrootselector.MATLABRootSelector)),
-		wire.Bind(new(globalmatlab.MATLABStartingDirSelector), new(*matlabstartingdirselector.MATLABStartingDirSelector)),
-		wire.Bind(new(globalmatlab.ConfigFactory), new(*config.Factory)),
+		wire.Bind(new(globalmatlab.MATLABManagerAdaptor), new(*sessionmanager.SessionManager)),
+
+		// Session Manager
+		sessionmanager.New,
+		wire.Bind(new(sessionmanager.MATLABManager), new(*matlabmanager.MATLABManager)),
+		wire.Bind(new(sessionmanager.ConfigFactory), new(*config.Factory)),
+		wire.Bind(new(sessionmanager.MATLABRootSelector), new(*matlabrootselector.MATLABRootSelector)),
+		wire.Bind(new(sessionmanager.MATLABStartingDirSelector), new(*matlabstartingdirselector.MATLABStartingDirSelector)),
 
 		// MATLAB Root Selector
 		matlabrootselector.New,
@@ -313,9 +371,16 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 
 		// MATLAB Manager
 		matlabmanager.New,
+		wire.Bind(new(matlabmanager.ConfigFactory), new(*config.Factory)),
 		wire.Bind(new(matlabmanager.MATLABServices), new(*matlabservices.MATLABServices)),
 		wire.Bind(new(matlabmanager.MATLABSessionStore), new(*matlabsessionstore.Store)),
 		wire.Bind(new(matlabmanager.MATLABSessionClientFactory), new(*matlabsessionclient.Factory)),
+		wire.Bind(new(matlabmanager.SessionSelector), new(*sessionselector.SessionSelector)),
+
+		// Session Selector
+		sessionselector.New,
+		wire.Bind(new(sessionselector.ConfigFactory), new(*config.Factory)),
+		wire.Bind(new(sessionselector.SessionDiscoverer), new(*sessiondiscovery.SessionDiscoverer)),
 
 		// MATLAB Services
 		matlabservices.New,
@@ -349,6 +414,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(localmatlabsessiondirectory.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(localmatlabsessiondirectory.ApplicationDirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(localmatlabsessiondirectory.MATLABFiles), new(matlabfiles.MATLABFiles)),
+		wire.Bind(new(localmatlabsessiondirectory.ConfigFactory), new(*config.Factory)),
 
 		// MATLAB Files Provider
 		matlabfiles.New,
@@ -368,6 +434,15 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		// MATLAB Session Client Factory
 		matlabsessionclient.NewFactory,
 		wire.Bind(new(matlabsessionclient.HttpClientFactory), new(*httpclient.Factory)),
+
+		// Session Discovery
+		sessiondiscovery.New,
+		wire.Bind(new(sessiondiscovery.AppDataDirGetter), new(*appdatadir.Getter)),
+		wire.Bind(new(sessiondiscovery.OSLayer), new(*osfacade.OsFacade)),
+
+		// App Data Dir
+		appdatadir.New,
+		wire.Bind(new(appdatadir.OSLayer), new(*osfacade.OsFacade)),
 
 		// Shared Dependencies
 
@@ -451,6 +526,12 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		iofacade.New,
 		filefacade.New,
 		registryfacade.New,
+		unixfacade.New,
+
+		// Resource Limit
+		resourcelimit.New,
+		wire.Bind(new(resourcelimit.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(resourcelimit.SyscallLayer), new(*unixfacade.UnixFacade)),
 	)
 
 	return nil

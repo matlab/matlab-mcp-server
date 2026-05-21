@@ -1,0 +1,42 @@
+{
+  "tools": [
+    {
+      "name": "greet_user",
+      "title": "Greet User",
+      "description": "Greets a user by name",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "User name"}
+        },
+        "required": ["name"]
+      }
+    },
+    {
+      "name": "generate_magic_square",
+      "title": "Generate Magic Square",
+      "description": "Generates an n-by-n magic square matrix",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "n": {"type": "number", "description": "Size"}
+        },
+        "required": ["n"]
+      }
+    }
+  ],
+  "signatures": {
+    "greet_user": {
+      "function": "greet_user",
+      "input": {
+        "order": ["name"]
+      }
+    },
+    "generate_magic_square": {
+      "function": "magic",
+      "input": {
+        "order": ["n"]
+      }
+    }
+  }
+}

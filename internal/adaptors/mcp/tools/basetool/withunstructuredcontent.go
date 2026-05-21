@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/utils/responseconverter"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/mcpfacade"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -89,23 +90,6 @@ func (t ToolWithUnstructuredContentOutput[ToolInput]) Handler() mcp.ToolHandlerF
 			logger.WithError(err).Warn("Unstructured handler returned an error")
 			return nil, nil, err
 		}
-		return richContentToUnstructuredContent(richContent), nil, nil
+		return responseconverter.ConvertRichContentToCallToolResult(richContent), nil, nil
 	}
-}
-
-func richContentToUnstructuredContent(content tools.RichContent) *mcp.CallToolResult {
-	unstructuredContent := &mcp.CallToolResult{
-		Content: []mcp.Content{},
-	}
-	for _, text := range content.TextContent {
-		unstructuredContent.Content = append(unstructuredContent.Content, &mcp.TextContent{Text: text})
-	}
-	for _, base64ImageData := range content.ImageContent {
-		unstructuredContent.Content = append(unstructuredContent.Content, &mcp.ImageContent{
-			MIMEType: "image/png",
-			Data:     base64ImageData,
-		})
-	}
-
-	return unstructuredContent
 }

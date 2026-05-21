@@ -86,7 +86,8 @@ func (c *Client) Eval(ctx context.Context, logger entities.Logger, input entitie
 	}
 
 	if len(response.Messages.EvalResponse) == 0 {
-		logger.Error("No EvalResponse messages received")
+		logger.
+			Debug("No EvalResponse messages received")
 		return entities.EvalResponse{}, fmt.Errorf("no response messages received")
 	}
 
@@ -139,13 +140,15 @@ func (c *Client) FEval(ctx context.Context, logger entities.Logger, input entiti
 	}
 
 	if len(response.Messages.FevalResponse) == 0 {
-		logger.Error("No FEvalResponse messages received")
+		logger.
+			Debug("No FEvalResponse messages received")
 		return entities.FEvalResponse{}, fmt.Errorf("no response messages received")
 	}
 
 	if response.Messages.FevalResponse[0].IsError {
 		if len(response.Messages.FevalResponse[0].MessageFaults) == 0 {
-			logger.Error("Response was in error state but no fault messages received")
+			logger.
+				Debug("Response was in error state but no fault messages received")
 			return entities.FEvalResponse{}, fmt.Errorf("response was in error state but no fault messages received")
 		}
 
@@ -153,7 +156,9 @@ func (c *Client) FEval(ctx context.Context, logger entities.Logger, input entiti
 		for _, rawFault := range response.Messages.FevalResponse[0].MessageFaults {
 			var f Fault
 			if err := json.Unmarshal(rawFault, &f); err != nil {
-				logger.WithError(err).Warn("Failed to deserialize fault message into a fault")
+				logger.
+					WithError(err).
+					Debug("Failed to deserialize fault message into a fault")
 			}
 			errorMessage += f.Message + "\n\n"
 		}
@@ -211,7 +216,9 @@ func (c *Client) pingMATLAB(ctx context.Context, logger entities.Logger) (bool, 
 		for _, rawFault := range response.Messages.PingResponse[0].MessageFaults {
 			var f Fault
 			if err := json.Unmarshal(rawFault, &f); err != nil {
-				logger.WithError(err).Warn("Failed to deserialize fault message into a fault")
+				logger.
+					WithError(err).
+					Debug("Failed to deserialize fault message into a fault")
 			}
 			errorMessage.WriteString(f.Message)
 			errorMessage.WriteString("\n\n")
@@ -240,7 +247,8 @@ func (c *Client) sendRequest(ctx context.Context, logger entities.Logger, endpoi
 
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		logger.WithError(err).Error("Failed to create HTTP request")
+		logger.
+			Debug("Failed to create HTTP request")
 		return ConnectorPayload{}, fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -249,29 +257,37 @@ func (c *Client) sendRequest(ctx context.Context, logger entities.Logger, endpoi
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		logger.WithError(err).Error("Failed to send HTTP request")
+		logger.
+			Debug("Failed to send HTTP request")
 		return ConnectorPayload{}, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			logger.WithError(err).Warn("Failed to close response body")
+			logger.
+				WithError(err).
+				Debug("Failed to close response body")
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.With("status", resp.Status).With("status-code", resp.StatusCode).Error("Request failed")
+		logger.
+			With("status", resp.Status).
+			With("status-code", resp.StatusCode).
+			Debug("Request failed")
 		return ConnectorPayload{}, fmt.Errorf("request failed with status code %d: %s", resp.StatusCode, resp.Status)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.WithError(err).Error("Failed to read response body")
+		logger.
+			Debug("Failed to read response body")
 		return ConnectorPayload{}, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var response ConnectorPayload
 	if err := json.Unmarshal(body, &response); err != nil {
-		logger.WithError(err).Error("Failed to unmarshal response")
+		logger.
+			Debug("Failed to unmarshal response")
 		return ConnectorPayload{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 

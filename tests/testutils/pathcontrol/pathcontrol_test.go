@@ -1,4 +1,4 @@
-// Copyright 2025 The MathWorks, Inc.
+// Copyright 2025-2026 The MathWorks, Inc.
 
 package pathcontrol_test
 
@@ -11,6 +11,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/fakematlab"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/pathcontrol"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRemoveFromPath_HappyPath(t *testing.T) {
@@ -49,7 +50,9 @@ func TestAddToPath_HappyPath(t *testing.T) {
 
 func TestRemoveAllMATLABsFromPath_HappyPath(t *testing.T) {
 	// Arrange - Create a temporary directory with a fake MATLAB executable
-	fakeMatlabDir, _ := fakematlab.Create(t)
+	placeholder, err := fakematlab.NewPlaceholder(t.TempDir())
+	require.NoError(t, err)
+	fakeMatlabDir := placeholder.Dir()
 
 	// Add some other paths to preserve
 	otherPath1 := filepath.Join("usr", "local", "bin")
@@ -69,10 +72,14 @@ func TestRemoveAllMATLABsFromPath_HappyPath(t *testing.T) {
 
 func TestRemoveAllMATLABsFromPath_HappyPath_RemovesMultipleFakeMATLABs(t *testing.T) {
 	// Arrange - Create multiple temporary directories with fake MATLAB executables
-	fakeMatlabDir1, _ := fakematlab.Create(t)
+	placeholder1, err := fakematlab.NewPlaceholder(t.TempDir())
+	require.NoError(t, err)
+	fakeMatlabDir1 := placeholder1.Dir()
 
 	// Create second fake MATLAB
-	fakeMatlabDir2, _ := fakematlab.Create(t)
+	placeholder2, err := fakematlab.NewPlaceholder(t.TempDir())
+	require.NoError(t, err)
+	fakeMatlabDir2 := placeholder2.Dir()
 
 	// Add some other paths to preserve
 	otherPath := filepath.Join("usr", "local", "bin")
@@ -152,15 +159,16 @@ func TestRemoveAllMATLABsFromPath_NoMATLABs(t *testing.T) {
 
 func TestUpdateEnvEntry_HappyPath(t *testing.T) {
 	// Arrange
-	env := []string{"VAR1=val1", "PATH=/old/path", "VAR2=val2"}
-	newPath := "/new/path"
+	oldPath := filepath.Join("old", "path")
+	newPath := filepath.Join("new", "path")
+	env := []string{"VAR1=val1", "PATH=" + oldPath, "VAR2=val2"}
 
 	// Act
 	newEnv := pathcontrol.UpdateEnvEntry(env, "PATH", newPath)
 
 	// Assert
-	assert.Contains(t, newEnv, "PATH=/new/path")
-	assert.NotContains(t, newEnv, "PATH=/old/path")
+	assert.Contains(t, newEnv, "PATH="+newPath)
+	assert.NotContains(t, newEnv, "PATH="+oldPath)
 	assert.Contains(t, newEnv, "VAR1=val1")
 	assert.Contains(t, newEnv, "VAR2=val2")
 	assert.Len(t, newEnv, 3)
@@ -169,13 +177,13 @@ func TestUpdateEnvEntry_HappyPath(t *testing.T) {
 func TestUpdateEnvEntry_NoExistingKey(t *testing.T) {
 	// Arrange
 	env := []string{"VAR1=val1", "VAR2=val2"}
-	newPath := "/new/path"
+	newPath := filepath.Join("new", "path")
 
 	// Act
 	newEnv := pathcontrol.UpdateEnvEntry(env, "PATH", newPath)
 
 	// Assert
-	assert.Contains(t, newEnv, "PATH=/new/path")
+	assert.Contains(t, newEnv, "PATH="+newPath)
 	assert.Contains(t, newEnv, "VAR1=val1")
 	assert.Contains(t, newEnv, "VAR2=val2")
 	assert.Len(t, newEnv, 3)
@@ -183,15 +191,16 @@ func TestUpdateEnvEntry_NoExistingKey(t *testing.T) {
 
 func TestUpdateEnvEntry_MultipleSimilarVars(t *testing.T) {
 	// Arrange
-	env := []string{"PATH_LIKE=something", "PATH=/old/path", "MY_PATH=elsewhere"}
-	newPath := "/new/path"
+	oldPath := filepath.Join("old", "path")
+	newPath := filepath.Join("new", "path")
+	env := []string{"PATH_LIKE=something", "PATH=" + oldPath, "MY_PATH=elsewhere"}
 
 	// Act
 	newEnv := pathcontrol.UpdateEnvEntry(env, "PATH", newPath)
 
 	// Assert
-	assert.Contains(t, newEnv, "PATH=/new/path")
-	assert.NotContains(t, newEnv, "PATH=/old/path")
+	assert.Contains(t, newEnv, "PATH="+newPath)
+	assert.NotContains(t, newEnv, "PATH="+oldPath)
 	assert.Contains(t, newEnv, "PATH_LIKE=something")
 	assert.Contains(t, newEnv, "MY_PATH=elsewhere")
 	assert.Len(t, newEnv, 3)

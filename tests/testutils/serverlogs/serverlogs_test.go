@@ -84,6 +84,22 @@ func TestReadErrorLogs_IgnoresNonServerLogFiles(t *testing.T) {
 	assert.Empty(t, errorLogs)
 }
 
+func TestReadErrorLogs_IgnoresShutdownEOFErrors(t *testing.T) {
+	fsys := fstest.MapFS{
+		"server-abc123.log": &fstest.MapFile{
+			Data: []byte(`{"level":"ERROR","msg":"MCP server run method returned an unexpected error","error":"server is closing: EOF"}
+{"level":"ERROR","msg":"Server failed with unexpected error","error":"server is closing: EOF"}
+{"level":"ERROR","msg":"Genuine error"}`),
+		},
+	}
+
+	errorLogs, err := serverlogs.ReadErrorLogs(fsys)
+
+	require.NoError(t, err)
+	require.Len(t, errorLogs, 1)
+	assert.Contains(t, errorLogs[0], "Genuine error")
+}
+
 func TestReadErrorLogs_EmptyLogFile(t *testing.T) {
 	fsys := fstest.MapFS{
 		"server-abc123.log": &fstest.MapFile{

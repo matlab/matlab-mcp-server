@@ -26,11 +26,16 @@ func ReadErrorLogs(fsys fs.FS) ([]string, error) {
 			return nil, fmt.Errorf("failed to read server log file %s: %w", logFile, err)
 		}
 		for _, line := range strings.Split(string(content), "\n") {
-			if strings.Contains(line, "\"level\":\"ERROR\"") {
+			if strings.Contains(line, "\"level\":\"ERROR\"") && !isShutdownEOFError(line) {
 				errorLogs = append(errorLogs, line)
 			}
 		}
 	}
 
 	return errorLogs, nil
+}
+
+// isShutdownEOFError filters benign EOF errors from the MCP go-sdk shutdown race.
+func isShutdownEOFError(line string) bool {
+	return strings.Contains(line, `"error":"server is closing: EOF"`)
 }

@@ -18,7 +18,7 @@
   "homepage": "https://www.mathworks.com",
   "documentation": "https://github.com/matlab/matlab-mcp-core-server#readme",
   "support": "https://github.com/matlab/matlab-mcp-core-server/issues",
-  "license": "BSD-3-Clause",
+  "license": "See license at https://github.com/matlab/matlab-mcp-core-server/blob/main/LICENSE.md",
   "keywords": ["matlab", "mathworks"],
   "privacy_policies": ["https://github.com/matlab/matlab-mcp-core-server?tab=readme-ov-file#data-collection"],
   "tools": [],
@@ -31,9 +31,12 @@
       "env": {
         "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_ROOT": "${user_config.PreferredLocalMATLABRoot}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_INITIAL_WD": "${user_config.PreferredMATLABStartingDirectory}",
+        "__MATLAB_MCP_CORE_SERVER_MCPB_LOG_DIR": "${user_config.BaseDir}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_INIT_ON_START": "${user_config.InitializeMATLABOnStartup}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_DISABLE_TELEM": "${user_config.DisableTelemetry}",
-        "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE": "${user_config.MATLABDisplayMode}"
+        "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE": "${user_config.MATLABDisplayMode}",
+        "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_SESSION_MODE": "${user_config.MATLABSessionMode}",
+        "__MATLAB_MCP_CORE_SERVER_MCPB_EXTENSION_FILE": "${user_config.ExtensionFile}"
       },
       "platform_overrides": {
         "win32": {

@@ -1,0 +1,22 @@
+{
+  "tools": [
+    {
+      "name": "evaluate_matlab_code",
+      "title": "Conflicting Tool",
+      "description": "This conflicts with a built-in tool",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ],
+  "signatures": {
+    "evaluate_matlab_code": {
+      "function": "disp",
+      "input": {
+        "order": []
+      }
+    }
+  }
+}

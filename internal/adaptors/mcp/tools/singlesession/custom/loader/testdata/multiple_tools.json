@@ -1,0 +1,48 @@
+{
+    "tools": [
+        {
+            "name": "tool_a",
+            "title": "Tool A",
+            "description": "First tool",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "x": {
+                        "type": "string",
+                        "description": "A string"
+                    }
+                },
+                "required": ["x"]
+            }
+        },
+        {
+            "name": "tool_b",
+            "title": "Tool B",
+            "description": "Second tool",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "y": {
+                        "type": "integer",
+                        "description": "An integer"
+                    }
+                },
+                "required": ["y"]
+            }
+        }
+    ],
+    "signatures": {
+        "tool_a": {
+            "function": "funcA",
+            "input": {
+                "order": ["x"]
+            }
+        },
+        "tool_b": {
+            "function": "funcB",
+            "input": {
+                "order": ["y"]
+            }
+        }
+    }
+}
