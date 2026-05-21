@@ -21,7 +21,7 @@ func TestLocalMATLABStartupTestSuite(t *testing.T) {
 
 func (s *LocalMATLABStartupTestSuite) TestHappyPath_EvaluateCode_ReturnsOutput() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.HappyConfig())
+	session, err := s.CreateSession(mockmatlab.HappyConfig(), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, true)
 
@@ -32,7 +32,7 @@ func (s *LocalMATLABStartupTestSuite) TestHappyPath_EvaluateCode_ReturnsOutput()
 
 func (s *LocalMATLABStartupTestSuite) TestErrorPath_MATLABExitsImmediately_EvaluationFails() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.ExitImmediatelyConfig(1))
+	session, err := s.CreateSession(mockmatlab.ExitImmediatelyConfig(1), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, false)
 
@@ -42,7 +42,7 @@ func (s *LocalMATLABStartupTestSuite) TestErrorPath_MATLABExitsImmediately_Evalu
 
 func (s *LocalMATLABStartupTestSuite) TestErrorPath_MATLABStartupFailure_ReturnsStartupError() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.StartupFailureConfig())
+	session, err := s.CreateSession(mockmatlab.StartupFailureConfig(), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, false)
 

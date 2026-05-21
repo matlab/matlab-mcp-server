@@ -32,5 +32,6 @@
         <entry key="CustomToolNameConflict" context="error">Custom tool name "{0}" in extension file "{1}" conflicts with a built-in tool. Choose a different name.</entry>
         <entry key="ArgumentNotAllowedInSessionMode" context="error">Error with supplied arguments: option "{0}" is not compatible with MATLAB session mode set to "{1}".</entry>
         <entry key="DuplicateToolName" context="error">Duplicate tool name "{0}" in "{1}". Choose a different name.</entry>
+        <entry key="CustomToolNameCollisionAcrossFiles" context="error">Tool name "{0}" is defined in multiple extension files: "{1}", "{2}".</entry>
     </message>
 </rsccat>

@@ -92,7 +92,7 @@ func TestLaunch_PassesEnvVarsToRunner(t *testing.T) {
 	runner.EXPECT().
 		Run(t.Context(), mock.AnythingOfType("string"), mock.MatchedBy(func(env []string) bool {
 			return slices.Contains(env, "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_ROOT=/opt/matlab")
-		})).
+		}), []string(nil)).
 		Return(mcpbundle.LaunchResult{Args: []string{"--matlab-root", "/opt/matlab"}}, nil).
 		Once()
 
@@ -120,7 +120,7 @@ func TestLaunch_FiltersExistingMCPBEnvVars(t *testing.T) {
 				}
 			}
 			return true
-		})).
+		}), []string(nil)).
 		Return(mcpbundle.LaunchResult{}, nil).
 		Once()
 

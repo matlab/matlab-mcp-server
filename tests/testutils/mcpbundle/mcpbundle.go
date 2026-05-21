@@ -20,7 +20,7 @@ import (
 )
 
 type CommandRunner interface {
-	Run(ctx context.Context, launcherPath string, env []string) (LaunchResult, error)
+	Run(ctx context.Context, launcherPath string, env []string, args []string) (LaunchResult, error)
 }
 
 type Bundle struct {
@@ -91,7 +91,7 @@ type LaunchResult struct {
 	Env  []string
 }
 
-func (b *Bundle) Launch(t *testing.T, envVars map[string]string) LaunchResult {
+func (b *Bundle) Launch(t *testing.T, envVars map[string]string, args ...string) LaunchResult {
 	t.Helper()
 
 	launcher := filepath.Join(b.dir, "bin", launcherFilename)
@@ -100,7 +100,7 @@ func (b *Bundle) Launch(t *testing.T, envVars map[string]string) LaunchResult {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	result, err := b.commandRunner.Run(t.Context(), launcher, env)
+	result, err := b.commandRunner.Run(t.Context(), launcher, env, args)
 	require.NoError(t, err, "launcher failed")
 
 	return result
@@ -116,9 +116,10 @@ func PathWithSpaces() string {
 
 func ExcludedFlags() map[string]string {
 	return map[string]string{
-		"help":         "meta flag, not a user configuration",
-		"version":      "meta flag, not a user configuration",
-		"setup-matlab": "internal operational mode, not user-facing in MCPB",
+		"help":           "meta flag, not a user configuration",
+		"version":        "meta flag, not a user configuration",
+		"setup-matlab":   "internal operational mode, not user-facing in MCPB",
+		"extension-file": "passed via manifest args array, not launcher env var mapping",
 	}
 }
 
@@ -127,13 +128,13 @@ type shellCommandRunner struct {
 	seq     int
 }
 
-func (r *shellCommandRunner) Run(ctx context.Context, launcherPath string, env []string) (LaunchResult, error) {
+func (r *shellCommandRunner) Run(ctx context.Context, launcherPath string, env []string, args []string) (LaunchResult, error) {
 	r.seq++
 	outputFile := filepath.Join(r.baseDir, fmt.Sprintf("invocation-%d.jsonl", r.seq))
 
 	env = append(env, fmt.Sprintf("%s=%s", mockmcpbinary.OutputFileEnvVar, outputFile))
 
-	cmd := execLauncherCommand(ctx, launcherPath)
+	cmd := execLauncherCommand(ctx, launcherPath, args...)
 	cmd.Env = env
 	output, err := cmd.CombinedOutput()
 	if err != nil {

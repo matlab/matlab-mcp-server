@@ -259,46 +259,48 @@ func (_c *MockConfig_EmbeddedConnectorDetailsTimeout_Call) RunAndReturn(run func
 	return _c
 }
 
-// ExtensionFile provides a mock function for the type MockConfig
-func (_mock *MockConfig) ExtensionFile() string {
+// ExtensionFiles provides a mock function for the type MockConfig
+func (_mock *MockConfig) ExtensionFiles() []string {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for ExtensionFile")
+		panic("no return value specified for ExtensionFiles")
 	}
 
-	var r0 string
-	if returnFunc, ok := ret.Get(0).(func() string); ok {
+	var r0 []string
+	if returnFunc, ok := ret.Get(0).(func() []string); ok {
 		r0 = returnFunc()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 	return r0
 }
 
-// MockConfig_ExtensionFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExtensionFile'
-type MockConfig_ExtensionFile_Call struct {
+// MockConfig_ExtensionFiles_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExtensionFiles'
+type MockConfig_ExtensionFiles_Call struct {
 	*mock.Call
 }
 
-// ExtensionFile is a helper method to define mock.On call
-func (_e *MockConfig_Expecter) ExtensionFile() *MockConfig_ExtensionFile_Call {
-	return &MockConfig_ExtensionFile_Call{Call: _e.mock.On("ExtensionFile")}
+// ExtensionFiles is a helper method to define mock.On call
+func (_e *MockConfig_Expecter) ExtensionFiles() *MockConfig_ExtensionFiles_Call {
+	return &MockConfig_ExtensionFiles_Call{Call: _e.mock.On("ExtensionFiles")}
 }
 
-func (_c *MockConfig_ExtensionFile_Call) Run(run func()) *MockConfig_ExtensionFile_Call {
+func (_c *MockConfig_ExtensionFiles_Call) Run(run func()) *MockConfig_ExtensionFiles_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *MockConfig_ExtensionFile_Call) Return(s string) *MockConfig_ExtensionFile_Call {
-	_c.Call.Return(s)
+func (_c *MockConfig_ExtensionFiles_Call) Return(strings []string) *MockConfig_ExtensionFiles_Call {
+	_c.Call.Return(strings)
 	return _c
 }
 
-func (_c *MockConfig_ExtensionFile_Call) RunAndReturn(run func() string) *MockConfig_ExtensionFile_Call {
+func (_c *MockConfig_ExtensionFiles_Call) RunAndReturn(run func() []string) *MockConfig_ExtensionFiles_Call {
 	_c.Call.Return(run)
 	return _c
 }

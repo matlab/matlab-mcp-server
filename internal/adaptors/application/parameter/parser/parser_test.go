@@ -3,6 +3,7 @@
 package parser_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
@@ -230,6 +231,62 @@ func TestParser_Parse_FlagOverridesEnvVar(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedFlagValue, result[paramID])
 	assert.Equal(t, []entities.Parameter{mockParam}, parameters)
+	assert.Equal(t, []string{paramID}, specifiedParameters)
+}
+
+func TestParser_Parse_StringArrayFlagAppendsToEnvVar(t *testing.T) {
+	// Arrange
+	mockOSLayer := &parsermocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockDefaultParamFactory := &parsermocks.MockDefaultParameterFactory{}
+	defer mockDefaultParamFactory.AssertExpectations(t)
+
+	mockParamFactory := &parsermocks.MockParameterFactory{}
+	defer mockParamFactory.AssertExpectations(t)
+
+	paramID := "string-array-param"
+	paramFlagName := "my-files"
+	paramEnvVar := "FILES_ENV_VAR"
+
+	mockParam := newMockParam(
+		t,
+		paramID,
+		paramFlagName,
+		paramEnvVar,
+		[]string{},
+		"Test string array description",
+		false,
+		true,
+	)
+
+	mockDefaultParamFactory.EXPECT().
+		DefaultParameters().
+		Return([]entities.Parameter{}).
+		Once()
+
+	mockParamFactory.EXPECT().
+		Parameters().
+		Return([]entities.Parameter{mockParam}).
+		Once()
+
+	envFile := filepath.Join("env", "file.json")
+	cliFile := filepath.Join("cli", "file.json")
+
+	mockOSLayer.EXPECT().
+		LookupEnv(paramEnvVar).
+		Return(envFile, true).
+		Once()
+
+	args := []string{"--" + paramFlagName + "=" + cliFile}
+
+	// Act
+	p := parser.New(mockOSLayer, mockDefaultParamFactory, mockParamFactory)
+	_, result, specifiedParameters, err := p.Parse(args)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{envFile, cliFile}, result[paramID])
 	assert.Equal(t, []string{paramID}, specifiedParameters)
 }
 

@@ -37,7 +37,6 @@ MCPB_MAPPINGS=(
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISABLE_TELEM:bool:--disable-telemetry"
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE:string:--matlab-display-mode"
     "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_SESSION_MODE:string:--matlab-session-mode"
-    "__MATLAB_MCP_CORE_SERVER_MCPB_EXTENSION_FILE:string:--extension-file"
     "__MATLAB_MCP_CORE_SERVER_MCPB_LOG_LEVEL:string:--log-level"
 )
 
@@ -50,6 +49,23 @@ for mapping in "${MCPB_MAPPINGS[@]}"; do
         bool)   [[ "$val" == "true" ]] && ARGS+=("$flag") ;;
     esac
     unset "$env_var"
+done
+
+# Handle args passed from MCPB (via manifest args array).
+# Each --flag is followed by its values until the next --flag or end of args.
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --extension-files)
+            shift
+            while [[ $# -gt 0 && "$1" != --* ]]; do
+                ARGS+=("--extension-file" "$1")
+                shift
+            done
+            ;;
+        *)
+            shift
+            ;;
+    esac
 done
 
 exec "$BIN" ${ARGS[@]+"${ARGS[@]}"}

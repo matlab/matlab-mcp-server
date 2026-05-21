@@ -18,7 +18,6 @@ for %%M in (
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISABLE_TELEM:bool:--disable-telemetry"
     "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE:string:--matlab-display-mode"
     "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_SESSION_MODE:string:--matlab-session-mode"
-    "__MATLAB_MCP_CORE_SERVER_MCPB_EXTENSION_FILE:string:--extension-file"
     "__MATLAB_MCP_CORE_SERVER_MCPB_LOG_LEVEL:string:--log-level"
 ) do (
     for /f "tokens=1,2,3 delims=:" %%A in ("%%~M") do (
@@ -28,5 +27,23 @@ for %%M in (
         set "%%A="
     )
 )
+
+REM Handle args passed from MCPB (via manifest args array).
+REM Each --flag is followed by its values until the next --flag or end of args.
+:parse_mcpb_args
+if "%~1"=="" goto done_mcpb_args
+if not "%~1"=="--extension-files" (
+    shift
+    goto parse_mcpb_args
+)
+shift
+:parse_extension_files
+if "%~1"=="" goto done_mcpb_args
+set "arg=%~1"
+if "!arg:~0,2!"=="--" goto parse_mcpb_args
+set ARGS=!ARGS! --extension-file "%~1"
+shift
+goto parse_extension_files
+:done_mcpb_args
 
 "%BIN%" %ARGS%

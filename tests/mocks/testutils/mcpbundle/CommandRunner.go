@@ -39,8 +39,8 @@ func (_m *MockCommandRunner) EXPECT() *MockCommandRunner_Expecter {
 }
 
 // Run provides a mock function for the type MockCommandRunner
-func (_mock *MockCommandRunner) Run(ctx context.Context, launcherPath string, env []string) (mcpbundle.LaunchResult, error) {
-	ret := _mock.Called(ctx, launcherPath, env)
+func (_mock *MockCommandRunner) Run(ctx context.Context, launcherPath string, env []string, args []string) (mcpbundle.LaunchResult, error) {
+	ret := _mock.Called(ctx, launcherPath, env, args)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
@@ -48,16 +48,16 @@ func (_mock *MockCommandRunner) Run(ctx context.Context, launcherPath string, en
 
 	var r0 mcpbundle.LaunchResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string) (mcpbundle.LaunchResult, error)); ok {
-		return returnFunc(ctx, launcherPath, env)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, []string) (mcpbundle.LaunchResult, error)); ok {
+		return returnFunc(ctx, launcherPath, env, args)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string) mcpbundle.LaunchResult); ok {
-		r0 = returnFunc(ctx, launcherPath, env)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, []string) mcpbundle.LaunchResult); ok {
+		r0 = returnFunc(ctx, launcherPath, env, args)
 	} else {
 		r0 = ret.Get(0).(mcpbundle.LaunchResult)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = returnFunc(ctx, launcherPath, env)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
+		r1 = returnFunc(ctx, launcherPath, env, args)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -73,11 +73,12 @@ type MockCommandRunner_Run_Call struct {
 //   - ctx context.Context
 //   - launcherPath string
 //   - env []string
-func (_e *MockCommandRunner_Expecter) Run(ctx interface{}, launcherPath interface{}, env interface{}) *MockCommandRunner_Run_Call {
-	return &MockCommandRunner_Run_Call{Call: _e.mock.On("Run", ctx, launcherPath, env)}
+//   - args []string
+func (_e *MockCommandRunner_Expecter) Run(ctx interface{}, launcherPath interface{}, env interface{}, args interface{}) *MockCommandRunner_Run_Call {
+	return &MockCommandRunner_Run_Call{Call: _e.mock.On("Run", ctx, launcherPath, env, args)}
 }
 
-func (_c *MockCommandRunner_Run_Call) Run(run func(ctx context.Context, launcherPath string, env []string)) *MockCommandRunner_Run_Call {
+func (_c *MockCommandRunner_Run_Call) Run(run func(ctx context.Context, launcherPath string, env []string, args []string)) *MockCommandRunner_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -91,10 +92,15 @@ func (_c *MockCommandRunner_Run_Call) Run(run func(ctx context.Context, launcher
 		if args[2] != nil {
 			arg2 = args[2].([]string)
 		}
+		var arg3 []string
+		if args[3] != nil {
+			arg3 = args[3].([]string)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -105,7 +111,7 @@ func (_c *MockCommandRunner_Run_Call) Return(launchResult mcpbundle.LaunchResult
 	return _c
 }
 
-func (_c *MockCommandRunner_Run_Call) RunAndReturn(run func(ctx context.Context, launcherPath string, env []string) (mcpbundle.LaunchResult, error)) *MockCommandRunner_Run_Call {
+func (_c *MockCommandRunner_Run_Call) RunAndReturn(run func(ctx context.Context, launcherPath string, env []string, args []string) (mcpbundle.LaunchResult, error)) *MockCommandRunner_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }

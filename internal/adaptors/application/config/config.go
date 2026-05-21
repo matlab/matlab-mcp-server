@@ -4,6 +4,7 @@ package config
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"slices"
 	"time"
 
@@ -38,7 +39,7 @@ type validatedArguments struct {
 	matlabSessionConnectionTimeout   time.Duration
 	matlabSessionDiscoveryTimeout    time.Duration
 	embeddedConnectorDetailsTimeout  time.Duration
-	extensionFile                    string
+	extensionFiles                   []string
 
 	// Telemetry
 	disableTelemetry                   bool
@@ -163,8 +164,8 @@ func (c *config) MATLABSessionDiscoveryTimeout() time.Duration {
 	return c.matlabSessionDiscoveryTimeout
 }
 
-func (c *config) ExtensionFile() string {
-	return c.extensionFile
+func (c *config) ExtensionFiles() []string {
+	return c.extensionFiles
 }
 
 func (c *config) BaseDir() string {
@@ -314,9 +315,14 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, messages.New_StartupErrors_InvalidDisplayMode_Error(displayMode)
 	}
 
-	extensionFile, err := get(rawCfg, defaultparameters.ExtensionFile())
+	rawExtensionFiles, err := get(rawCfg, defaultparameters.ExtensionFiles())
 	if err != nil {
 		return validatedArguments{}, err
+	}
+
+	var extensionFiles []string
+	for _, entry := range rawExtensionFiles {
+		extensionFiles = append(extensionFiles, filepath.SplitList(entry)...)
 	}
 
 	matlabSessionMode, err := get(rawCfg, defaultparameters.MATLABSessionMode())
@@ -410,7 +416,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		matlabSessionConnectionTimeout:   matlabSessionConnectionTimeout,
 		matlabSessionDiscoveryTimeout:    matlabSessionDiscoveryTimeout,
 		embeddedConnectorDetailsTimeout:  embeddedConnectorDetailsTimeout,
-		extensionFile:                    extensionFile,
+		extensionFiles:                   extensionFiles,
 
 		// Telemetry
 		disableTelemetry:                   disableTelemetry,

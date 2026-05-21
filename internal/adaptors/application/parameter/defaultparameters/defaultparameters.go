@@ -298,14 +298,14 @@ func EmbeddedConnectorDetailsTimeout() *parameter.Parameter[time.Duration] {
 	)
 }
 
-func ExtensionFile() *parameter.Parameter[string] {
+func ExtensionFiles() *parameter.Parameter[[]string] {
 	return parameter.NewParameter(
-		/* id */ "ExtensionFile",
+		/* id */ "ExtensionFiles",
 		/* flagName */ "extension-file",
 		/* hiddenFlag */ false,
 		/* envVarName */ envVarNamePrefix+"EXTENSION_FILE",
 		/* descriptionKey */ messages.CLIMessages_ExtensionFileDescription,
-		/* defaultValue */ "",
+		/* defaultValue */ []string(nil),
 		/* recordToLog */ true,
 		/* piiSafe */ false,
 	)

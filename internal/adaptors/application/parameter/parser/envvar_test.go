@@ -3,6 +3,7 @@
 package parser_test
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -220,6 +221,60 @@ func TestParser_Parse_DurationEnvVar(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 5*time.Minute+30*time.Second, result[paramID])
 	assert.Equal(t, []entities.Parameter{mockParam}, parameters)
+	assert.Equal(t, []string{paramID}, specifiedParameters)
+}
+
+func TestParser_Parse_StringArrayEnvVar(t *testing.T) {
+	// Arrange
+	mockOSLayer := &parsermocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockDefaultParamFactory := &parsermocks.MockDefaultParameterFactory{}
+	defer mockDefaultParamFactory.AssertExpectations(t)
+
+	mockParamFactory := &parsermocks.MockParameterFactory{}
+	defer mockParamFactory.AssertExpectations(t)
+
+	paramID := "string-array-param"
+	paramEnvVar := "FILES_ENV_VAR"
+
+	mockParam := newMockParam(
+		t,
+		paramID,
+		"my-files",
+		paramEnvVar,
+		[]string{},
+		"Test string array description",
+		false,
+		true,
+	)
+
+	mockDefaultParamFactory.EXPECT().
+		DefaultParameters().
+		Return([]entities.Parameter{}).
+		Once()
+
+	mockParamFactory.EXPECT().
+		Parameters().
+		Return([]entities.Parameter{mockParam}).
+		Once()
+
+	envValue := filepath.Join("path", "to", "a.json")
+
+	mockOSLayer.EXPECT().
+		LookupEnv(paramEnvVar).
+		Return(envValue, true).
+		Once()
+
+	args := []string{}
+
+	// Act
+	p := parser.New(mockOSLayer, mockDefaultParamFactory, mockParamFactory)
+	_, result, specifiedParameters, err := p.Parse(args)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{envValue}, result[paramID])
 	assert.Equal(t, []string{paramID}, specifiedParameters)
 }
 

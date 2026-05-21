@@ -27,7 +27,7 @@
     "entry_point": "bin/launch-matlab-mcp.sh",
     "mcp_config": {
       "command": "${__dirname}/bin/launch-matlab-mcp.sh",
-      "args": [],
+      "args": ["--extension-files", "${user_config.ExtensionFiles}"],
       "env": {
         "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_ROOT": "${user_config.PreferredLocalMATLABRoot}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_INITIAL_WD": "${user_config.PreferredMATLABStartingDirectory}",
@@ -36,7 +36,6 @@
         "__MATLAB_MCP_CORE_SERVER_MCPB_DISABLE_TELEM": "${user_config.DisableTelemetry}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_DISPLAY_MODE": "${user_config.MATLABDisplayMode}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_SESSION_MODE": "${user_config.MATLABSessionMode}",
-        "__MATLAB_MCP_CORE_SERVER_MCPB_EXTENSION_FILE": "${user_config.ExtensionFile}",
         "__MATLAB_MCP_CORE_SERVER_MCPB_LOG_LEVEL": "${user_config.LogLevel}"
       },
       "platform_overrides": {

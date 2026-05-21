@@ -22,7 +22,7 @@ func TestLazyLoadTestSuite(t *testing.T) {
 
 func (s *LazyLoadTestSuite) TestLazyLoad_MATLABStartsOnFirstToolCall() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.HappyConfig())
+	session, err := s.CreateSession(mockmatlab.HappyConfig(), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, true)
 
@@ -53,7 +53,7 @@ func (s *LazyLoadTestSuite) TestLazyLoad_MATLABStartsOnFirstToolCall() {
 }
 
 func (s *LazyLoadTestSuite) TestEagerLoad_MATLABStartsOnSessionCreation() {
-	session, err := s.CreateSession(mockmatlab.HappyConfig(), "--initialize-matlab-on-startup")
+	session, err := s.CreateSession(mockmatlab.HappyConfig(), nil, "--initialize-matlab-on-startup")
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, true)
 
@@ -77,7 +77,7 @@ func (s *LazyLoadTestSuite) TestEagerLoad_MATLABStartsOnSessionCreation() {
 
 func (s *LazyLoadTestSuite) TestLazyLoad_SecondToolCallReusesSession() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.HappyConfig())
+	session, err := s.CreateSession(mockmatlab.HappyConfig(), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, true)
 
@@ -99,7 +99,7 @@ func (s *LazyLoadTestSuite) TestLazyLoad_SecondToolCallReusesSession() {
 
 func (s *LazyLoadTestSuite) TestReconnection_AfterExit_MATLABRestartsOnNextToolCall() {
 	ctx := s.T().Context()
-	session, err := s.CreateSession(mockmatlab.HappyConfig())
+	session, err := s.CreateSession(mockmatlab.HappyConfig(), nil)
 	s.Require().NoError(err)
 	defer s.CleanupSession(session, false)
 

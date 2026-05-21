@@ -66,6 +66,7 @@ func (s *Server) Run(sdkUserTools []tools.Tool) error {
 
 	toolsToAdd, err := s.configurator.GetToolsToAdd()
 	if err != nil {
+		logger.WithError(err).Error("Failed to configure tools")
 		return err
 	}
 

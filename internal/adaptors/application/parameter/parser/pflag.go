@@ -21,6 +21,8 @@ func (p *Parser) setupFlags() {
 			p.flagSet.Bool(flagName, defaultValue, parameter.GetDescription())
 		case string:
 			p.flagSet.String(flagName, defaultValue, parameter.GetDescription())
+		case []string:
+			p.flagSet.StringArray(flagName, defaultValue, parameter.GetDescription())
 		case time.Duration:
 			p.flagSet.Duration(flagName, defaultValue, parameter.GetDescription())
 		}
@@ -49,6 +51,17 @@ func (p *Parser) parseFlags(args []string, specifiedArgs map[string]any, specifi
 			val, err = p.flagSet.GetBool(f.Name)
 		case string:
 			val, err = p.flagSet.GetString(f.Name)
+		case []string:
+			var flagValues []string
+			flagValues, err = p.flagSet.GetStringArray(f.Name)
+			if err == nil {
+				// Append CLI values after any existing values (e.g. from env var)
+				if existing, ok := specifiedArgs[parameter.GetID()].([]string); ok {
+					val = append(existing, flagValues...)
+				} else {
+					val = flagValues
+				}
+			}
 		case time.Duration:
 			val, err = p.flagSet.GetDuration(f.Name)
 		default:

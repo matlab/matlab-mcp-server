@@ -152,7 +152,7 @@ func assertManifestStaged(t *testing.T, stagingDir string) {
 	require.True(t, ok)
 	assert.NotEmpty(t, userConfigRaw)
 
-	assertEnvVarsMatchUserConfig(t, manifest, userConfigRaw)
+	assertUserConfigReferencedInMCPConfig(t, manifest, userConfigRaw)
 }
 
 func assertStaticAssetsStaged(t *testing.T, stagingDir string) {
@@ -168,7 +168,7 @@ func assertStaticAssetsStaged(t *testing.T, stagingDir string) {
 	assertLauncherPermissions(t, launcherSh, launcherCmd)
 }
 
-func assertEnvVarsMatchUserConfig(t *testing.T, manifest map[string]any, userConfig map[string]any) {
+func assertUserConfigReferencedInMCPConfig(t *testing.T, manifest map[string]any, userConfig map[string]any) {
 	t.Helper()
 
 	server, ok := manifest["server"].(map[string]any)
@@ -180,27 +180,46 @@ func assertEnvVarsMatchUserConfig(t *testing.T, manifest map[string]any, userCon
 	env, ok := mcpConfig["env"].(map[string]any)
 	require.True(t, ok, "env section not found in manifest")
 
+	const prefix = "${user_config."
+	const suffix = "}"
+
 	referencedKeys := make(map[string]bool)
+
+	// Check env vars for user_config references
 	for envVar, value := range env {
 		valueStr, ok := value.(string)
 		require.True(t, ok, "env var %s value is not a string", envVar)
 
-		const prefix = "${user_config."
-		const suffix = "}"
 		require.True(t, strings.HasPrefix(valueStr, prefix) && strings.HasSuffix(valueStr, suffix),
 			"env var %s should reference user_config, got %s", envVar, valueStr)
 
 		key := valueStr[len(prefix) : len(valueStr)-len(suffix)]
-
 		referencedKeys[key] = true
 
 		assert.Contains(t, userConfig, key,
 			"env var %s references ${user_config.%s} but no such user_config key exists", envVar, key)
 	}
 
+	// Check args for user_config references
+	if args, ok := mcpConfig["args"].([]any); ok {
+		for _, arg := range args {
+			argStr, ok := arg.(string)
+			if !ok {
+				continue
+			}
+			if strings.HasPrefix(argStr, prefix) && strings.HasSuffix(argStr, suffix) {
+				key := argStr[len(prefix) : len(argStr)-len(suffix)]
+				referencedKeys[key] = true
+
+				assert.Contains(t, userConfig, key,
+					"args references ${user_config.%s} but no such user_config key exists", key)
+			}
+		}
+	}
+
 	for key := range userConfig {
 		assert.True(t, referencedKeys[key],
-			"user_config key %s is not referenced by any env var", key)
+			"user_config key %s is not referenced by any env var or arg", key)
 	}
 }
 
@@ -251,16 +270,39 @@ func TestBuild_EnvVarConsistencyAcrossManifestAndLaunchers(t *testing.T) {
 		"env var names in manifest.json and launch-matlab-mcp.cmd should match")
 }
 
+func TestBuild_LaunchersParseExtensionFilesArgs(t *testing.T) {
+	// Arrange
+	stagingDir := filepath.Join(t.TempDir(), "staging")
+	t.Setenv("MCPB_STAGING_DIR", stagingDir)
+
+	// Act
+	require.NoError(t, mcpbstagebuilder.Build("0.0.0-test"))
+
+	// Assert — bash script handles --extension-files and forwards as --extension-file
+	shContent, err := os.ReadFile(filepath.Join(stagingDir, "bundle", "bin", "launch-matlab-mcp.sh")) //nolint:gosec // Test file path from t.TempDir()
+	require.NoError(t, err)
+	shText := string(shContent)
+	assert.Contains(t, shText, "--extension-files)")
+	assert.Contains(t, shText, `ARGS+=("--extension-file" "$1")`)
+
+	// Assert — cmd script handles --extension-files and forwards as --extension-file
+	cmdContent, err := os.ReadFile(filepath.Join(stagingDir, "bundle", "bin", "launch-matlab-mcp.cmd")) //nolint:gosec // Test file path from t.TempDir()
+	require.NoError(t, err)
+	cmdText := string(cmdContent)
+	assert.Contains(t, cmdText, `"--extension-files"`)
+	assert.Contains(t, cmdText, `--extension-file "%~1"`)
+}
+
 func extractEnvVarsFromContent(content string) []string {
-	re := regexp.MustCompile(`(__MATLAB_MCP_CORE_SERVER_MCPB_\w+):(?:string|bool):`)
-	matches := re.FindAllStringSubmatch(content, -1)
+	re := regexp.MustCompile(`__MATLAB_MCP_CORE_SERVER_MCPB_\w+`)
+	matches := re.FindAllString(content, -1)
 
 	seen := make(map[string]bool)
 	var unique []string
 	for _, m := range matches {
-		if !seen[m[1]] {
-			seen[m[1]] = true
-			unique = append(unique, m[1])
+		if !seen[m] {
+			seen[m] = true
+			unique = append(unique, m)
 		}
 	}
 

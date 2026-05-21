@@ -2,7 +2,7 @@
 
 This guide shows how to use custom tools with the MATLAB MCP Core Server. 
 
-You can expose any MATLAB function as an MCP tool defined in a JSON file. The server loads your tool definitions at startup and registers them alongside the built-in tools. When your AI application calls a custom tool, the server executes the MATLAB function and returns the command window output. The MATLAB function must be on the MATLAB path. To update your tool definitions, edit the extension file and restart the server.
+You can expose any MATLAB functions as MCP tools defined in JSON files. The server loads your tool definitions at startup and registers them alongside the built-in tools. When your AI application calls a custom tool, the server executes the MATLAB function and returns the command window output. The MATLAB function must be on the MATLAB path. To update your tool definitions, edit the extension files and restart the server.
 
 Custom tool arguments support `string`, `number`, `integer`, and `boolean` data types. 
 
@@ -17,7 +17,7 @@ Custom tool arguments support `string`, `number`, `integer`, and `boolean` data 
 
 ## Get Started
 
-This example shows how to add a custom tool to the MCP server. First you define the MATLAB function you want the tool to use. Then you define the tool in a JSON file, along with a signature for your MATLAB function. Then you pass this JSON file to the MCP server using the `extension file` argument.
+This example shows how to add a custom tool to the MCP server. First you define the MATLAB function you want the tool to use. Then you define the tool in a JSON file, along with a signature for your MATLAB function. Then you pass this JSON file to the MCP server using the `extension file` argument. You can also pass multiple extension files.
 
 1. Create the MATLAB function `greet_user.m`:
     ```matlab
@@ -60,13 +60,45 @@ This example shows how to add a custom tool to the MCP server. First you define 
     }
     ```
 
-1. Start the server with the [`--extension-file` argument](../README.md#arguments):
+1. Start the server with the [`--extension-file` argument](../README.md#arguments).
 
+    Windows:
+    ```
+    --extension-file=C:\\path\\to\\my-tools.json
+    ```
+
+    Linux and macOS:
     ```
     --extension-file=/path/to/my-tools.json
     ```
 
     Your tool is now available. Call it with the `name = "Alice"` and `age = 30` to execute `greet_user("Alice", 30)` in MATLAB.
+
+1.  You can also use multiple extension files, and provide extension files to the MCP server using environment variables. 
+
+    **Multiple extension files**
+
+    Windows:
+    ```
+    --extension-file=C:\\path\\to\\my-tools.json --extension-file=C:\\path\\to\\my-other-tools.json
+    ```
+
+    Linux and macOS:
+    ```
+    --extension-file=/path/to/my-tools.json --extension-file=/path/to/my-other-tools.json
+    ```
+ 
+    **Environment variables**
+
+    Windows:
+    ```
+    MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\my-tools.json;C:\Users\name\my-other-tools.json
+    ```
+
+    Linux and macOS:
+    ```
+    MW_MCP_SERVER_EXTENSION_FILE=/path/to/my-tools.json:/path/to/my-other-tools.json
+    ```
 
 ## Extension File Format
 

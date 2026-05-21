@@ -1,0 +1,24 @@
+{
+  "tools": [
+    {
+      "name": "generate_magic_square",
+      "title": "Magic Square Generator",
+      "description": "Creates a magic square of given size",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "size": {"type": "number", "description": "Dimension of the square"}
+        },
+        "required": ["size"]
+      }
+    }
+  ],
+  "signatures": {
+    "generate_magic_square": {
+      "function": "magic",
+      "input": {
+        "order": ["size"]
+      }
+    }
+  }
+}

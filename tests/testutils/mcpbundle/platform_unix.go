@@ -12,6 +12,7 @@ import (
 const launcherFilename = "launch-matlab-mcp.sh"
 const pathWithSpaces = "/opt/my matlab/R2025b"
 
-func execLauncherCommand(ctx context.Context, launcherPath string) *exec.Cmd {
-	return exec.CommandContext(ctx, "bash", launcherPath)
+func execLauncherCommand(ctx context.Context, launcherPath string, args ...string) *exec.Cmd {
+	cmdArgs := append([]string{launcherPath}, args...)
+	return exec.CommandContext(ctx, "bash", cmdArgs...) //nolint:gosec // Trusted test path
 }

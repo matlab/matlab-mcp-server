@@ -3,6 +3,7 @@
 package parser_test
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -292,6 +293,106 @@ func TestParser_Parse_BadBoolFlagValue(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Nil(t, parameters)
 	assert.Nil(t, specifiedParameters)
+}
+
+func TestParser_Parse_StringArrayFlag_SingleValue(t *testing.T) {
+	// Arrange
+	mockOSLayer := &parsermocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockDefaultParamFactory := &parsermocks.MockDefaultParameterFactory{}
+	defer mockDefaultParamFactory.AssertExpectations(t)
+
+	mockParamFactory := &parsermocks.MockParameterFactory{}
+	defer mockParamFactory.AssertExpectations(t)
+
+	paramID := "string-array-param"
+	paramFlagName := "my-files"
+
+	mockParam := newMockParam(
+		t,
+		paramID,
+		paramFlagName,
+		"",
+		[]string{},
+		"Test string array description",
+		false,
+		true,
+	)
+
+	mockDefaultParamFactory.EXPECT().
+		DefaultParameters().
+		Return([]entities.Parameter{}).
+		Once()
+
+	mockParamFactory.EXPECT().
+		Parameters().
+		Return([]entities.Parameter{mockParam}).
+		Once()
+
+	expectedValue := filepath.Join("path", "to", "file.json")
+	args := []string{"--" + paramFlagName + "=" + expectedValue}
+
+	// Act
+	p := parser.New(mockOSLayer, mockDefaultParamFactory, mockParamFactory)
+	_, result, specifiedParameters, err := p.Parse(args)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{expectedValue}, result[paramID])
+	assert.Equal(t, []string{paramID}, specifiedParameters)
+}
+
+func TestParser_Parse_StringArrayFlag_MultipleValues(t *testing.T) {
+	// Arrange
+	mockOSLayer := &parsermocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockDefaultParamFactory := &parsermocks.MockDefaultParameterFactory{}
+	defer mockDefaultParamFactory.AssertExpectations(t)
+
+	mockParamFactory := &parsermocks.MockParameterFactory{}
+	defer mockParamFactory.AssertExpectations(t)
+
+	paramID := "string-array-param"
+	paramFlagName := "my-files"
+
+	mockParam := newMockParam(
+		t,
+		paramID,
+		paramFlagName,
+		"",
+		[]string{},
+		"Test string array description",
+		false,
+		true,
+	)
+
+	mockDefaultParamFactory.EXPECT().
+		DefaultParameters().
+		Return([]entities.Parameter{}).
+		Once()
+
+	mockParamFactory.EXPECT().
+		Parameters().
+		Return([]entities.Parameter{mockParam}).
+		Once()
+
+	expectedValueA := filepath.Join("path", "to", "a.json")
+	expectedValueB := filepath.Join("path", "to", "b.json")
+	args := []string{
+		"--" + paramFlagName + "=" + expectedValueA,
+		"--" + paramFlagName + "=" + expectedValueB,
+	}
+
+	// Act
+	p := parser.New(mockOSLayer, mockDefaultParamFactory, mockParamFactory)
+	_, result, specifiedParameters, err := p.Parse(args)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{expectedValueA, expectedValueB}, result[paramID])
+	assert.Equal(t, []string{paramID}, specifiedParameters)
 }
 
 func TestParser_Parse_InactiveParameterFlagSkipped(t *testing.T) {

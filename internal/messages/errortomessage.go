@@ -55,6 +55,14 @@ func FromError(catalog LocaleSpecificCatalog, err Error) string {
 			e.Attr0,
 			e.Attr1,
 		)
+	case *StartupErrors_CustomToolNameCollisionAcrossFiles_Error:
+		msg := catalog.Get(StartupErrors_CustomToolNameCollisionAcrossFiles)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+			e.Attr1,
+			e.Attr2,
+		)
 	case *StartupErrors_CustomToolNameConflict_Error:
 		msg := catalog.Get(StartupErrors_CustomToolNameConflict)
 		return fmt.Sprintf(

@@ -38,6 +38,8 @@ func (p *Parser) parseEnvVars(specifiedArgs map[string]any, specifiedParameters 
 			parsedVal = boolVal
 		case string:
 			parsedVal = val
+		case []string:
+			parsedVal = []string{val}
 		case time.Duration:
 			durationVal, err := time.ParseDuration(val)
 			if err != nil {

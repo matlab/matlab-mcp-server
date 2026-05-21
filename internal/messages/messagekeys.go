@@ -26,6 +26,7 @@ const (
 	StartupErrors_BadSyntax                                 messageKey = "StartupErrors_BadSyntax"
 	StartupErrors_BadValue                                  messageKey = "StartupErrors_BadValue"
 	StartupErrors_BadValueForEnvVar                         messageKey = "StartupErrors_BadValueForEnvVar"
+	StartupErrors_CustomToolNameCollisionAcrossFiles        messageKey = "StartupErrors_CustomToolNameCollisionAcrossFiles"
 	StartupErrors_CustomToolNameConflict                    messageKey = "StartupErrors_CustomToolNameConflict"
 	StartupErrors_DuplicateParameter                        messageKey = "StartupErrors_DuplicateParameter"
 	StartupErrors_DuplicateToolName                         messageKey = "StartupErrors_DuplicateToolName"

@@ -28,7 +28,7 @@ func TestGetUserConfig_HappyPath(t *testing.T) {
 		"DisableTelemetry",
 		"MATLABDisplayMode",
 		"MATLABSessionMode",
-		"ExtensionFile",
+		"ExtensionFiles",
 		"LogLevel",
 	}
 
@@ -82,7 +82,7 @@ func TestGetUserConfig_DirectoryTypeOverrides(t *testing.T) {
 func TestGetUserConfig_FileTypeOverrides(t *testing.T) {
 	// Arrange
 	expectedFileKeys := []string{
-		"ExtensionFile",
+		"ExtensionFiles",
 	}
 
 	// Act
@@ -142,4 +142,18 @@ func TestGetUserConfig_AllEntriesNotRequired(t *testing.T) {
 	for key, entry := range config {
 		assert.False(t, entry.Required, "entry %s should not be required", key)
 	}
+}
+
+func TestGetUserConfig_MultipleFieldSetForExtensionFiles(t *testing.T) {
+	// Arrange
+
+	// Act
+	config, err := userconfig.GetUserConfig()
+
+	// Assert
+	require.NoError(t, err)
+
+	entry, exists := config["ExtensionFiles"]
+	require.True(t, exists, "expected key ExtensionFiles not found")
+	assert.True(t, entry.Multiple, "ExtensionFiles should have multiple set to true")
 }

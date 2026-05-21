@@ -43,7 +43,7 @@ func defaultParameters() []entities.Parameter {
 		defaultparameters.EmbeddedConnectorDetailsTimeout(),
 
 		defaultparameters.DisableTelemetry(),
-		defaultparameters.ExtensionFile(),
+		defaultparameters.ExtensionFiles(),
 		defaultparameters.TelemetryCollectorEndpoint(),
 		defaultparameters.TelemetryCollectionInterval(),
 		defaultparameters.TelemetryCollectorEndpointInsecure(),
@@ -85,7 +85,7 @@ func TestNewConfig_InvalidParameterType(t *testing.T) {
 		{key: defaultparameters.MATLABSessionConnectionTimeout().GetID(), invalidValue: "5s", expectedType: "time.Duration"},
 		{key: defaultparameters.MATLABSessionDiscoveryTimeout().GetID(), invalidValue: "30s", expectedType: "time.Duration"},
 		{key: defaultparameters.EmbeddedConnectorDetailsTimeout().GetID(), invalidValue: "1m", expectedType: "time.Duration"},
-		{key: defaultparameters.ExtensionFile().GetID(), invalidValue: 123, expectedType: "string"},
+		{key: defaultparameters.ExtensionFiles().GetID(), invalidValue: "not-a-slice", expectedType: "[]string"},
 
 		{key: defaultparameters.DisableTelemetry().GetID(), invalidValue: "false", expectedType: "bool"},
 		{key: defaultparameters.TelemetryCollectorEndpoint().GetID(), invalidValue: 123, expectedType: "string"},
@@ -153,7 +153,7 @@ func TestNewConfig_MissingParameter(t *testing.T) {
 		defaultparameters.MATLABSessionConnectionTimeout(),
 		defaultparameters.MATLABSessionDiscoveryTimeout(),
 		defaultparameters.EmbeddedConnectorDetailsTimeout(),
-		defaultparameters.ExtensionFile(),
+		defaultparameters.ExtensionFiles(),
 		defaultparameters.DisableTelemetry(),
 		defaultparameters.TelemetryCollectorEndpoint(),
 		defaultparameters.TelemetryCollectionInterval(),
@@ -344,6 +344,157 @@ func TestNewConfig_InvalidMATLABSessionMode(t *testing.T) {
 	// Assert
 	require.Equal(t, expectedError, err)
 	assert.Nil(t, cfg, "Config should be nil")
+}
+
+func TestConfig_ExtensionFiles_ExpandsPathSeparator(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	fileA := filepath.Join("path", "to", "a.json")
+	fileB := filepath.Join("path", "to", "b.json")
+	combinedEntry := fileA + string(filepath.ListSeparator) + fileB
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.ExtensionFiles().GetID()] = []string{combinedEntry}
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{fileA, fileB}, cfg.ExtensionFiles())
+}
+
+func TestConfig_ExtensionFiles_MultipleEntriesWithSeparators(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	fileA := filepath.Join("path", "to", "a.json")
+	fileB := filepath.Join("path", "to", "b.json")
+	fileC := filepath.Join("path", "to", "c.json")
+	combinedEntry := fileA + string(filepath.ListSeparator) + fileB
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.ExtensionFiles().GetID()] = []string{combinedEntry, fileC}
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{fileA, fileB, fileC}, cfg.ExtensionFiles())
+}
+
+func TestConfig_ExtensionFiles_SingleEntryWithoutSeparator(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	expectedFile := filepath.Join("path", "to", "tools.json")
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.ExtensionFiles().GetID()] = []string{expectedFile}
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{expectedFile}, cfg.ExtensionFiles())
+}
+
+func TestConfig_ExtensionFiles_NilInput(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.ExtensionFiles().GetID()] = []string(nil)
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Nil(t, cfg.ExtensionFiles())
 }
 
 func TestConfig_Version_HappyPath(t *testing.T) {

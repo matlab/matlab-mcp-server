@@ -106,16 +106,39 @@ Customize the behavior of the server by specifying arguments in one of these way
 | ------------- | ------------- | ------------- |
 | help | Displays help information for all arguments. | `--help` |
 | version | Displays the version of the MATLAB MCP Core Server. | `--version` |
-| matlab-root | Full path specifying which MATLAB to start. Do not include `/bin` in the path. By default, the server tries to find the first MATLAB on the system PATH. | Windows: `--matlab-root=C:\\Program Files\\MATLAB\\R2026a` <br><br> Linux/macOS: `--matlab-root=/home/usr/MATLAB/R2026a` |
+| matlab-root | Full path specifying which MATLAB to start. Do not include `/bin` in the path. By default, the server tries to find the first MATLAB on the system PATH. | Windows: `--matlab-root=C:\\Program Files\\MATLAB\\R2026a` <br><br> Linux/macOS: `--matlab-root=/home/usr/MATLAB/R2026a`<br><br>As an environment variable: `MW_MCP_SERVER_MATLAB_ROOT=/home/usr/MATLAB/R2026a` |
 | initialize-matlab-on-startup | To initialize MATLAB as soon as you start the server, set this argument to `true`. By default, MATLAB only starts when the first tool is called. | `--initialize-matlab-on-startup=true` |
 | initial-working-folder | Specify the folder where MATLAB starts. If you do not specify a value, MATLAB starts at the path of your AI application's first [Root (MCP)](https://modelcontextprotocol.io/specification/latest/client/roots). If you have not defined a root, MATLAB starts in these locations: <br> <ul><li>Linux: `/home/username` </li><li> Windows: `C:\Users\username\Documents`</li><li>Mac: `/Users/username/Documents`</li></ul> | Windows: `--initial-working-folder=C:\\Users\\username\\MyProject` <br><br> Linux/macOS: `--initial-working-folder=/Users/username/MyProject` |
 | matlab-display-mode | Specify whether to show the MATLAB desktop. Use `desktop` mode (default) to show the MATLAB desktop. Use `nodesktop` mode to use MATLAB only from your AI application, without the MATLAB desktop. Note that in `nodesktop` mode, commands requiring a graphical interface (such as `edit`, `open`, `open_system`, `uifigure`, and `appdesigner`) will still open MATLAB windows on your desktop. | `--matlab-display-mode=nodesktop` |
 | matlab-session-mode | Specify whether the MCP server starts a new MATLAB (default) or connects to a MATLAB that is already running (supported for MATLAB R2023a onwards). To start a new MATLAB, use `new` mode. To connect to a running MATLAB, use `existing` mode:<br><br><ol><li>If you are using `existing` mode for the first time, run `./matlab-mcp-core-server --setup-matlab`.<br><br>This command installs an add-on named MATLAB MCP Core Server Toolbox in MATLAB. (For Claude Desktop, you must download the MATLAB MCP Core Server binary using the instructions in [Setup](#setup) before you run `./matlab-mcp-core-server --setup-matlab`). You can customize the command with other arguments from this table. For example, to specify which MATLAB to use to install the toolbox, you can use `./matlab-mcp-core-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a`. <br><br></li><li>In the command window of a running MATLAB session, run `shareMATLABSession()`. The MCP server will connect to this MATLAB when you start the server with `--matlab-session-mode=existing`. If you are running multiple MATLAB sessions, the server connects to the MATLAB session where you most recently ran the command `shareMATLABSession()`.<br><br>As an alternative to running `shareMATLABSession()` manually, you can add the command to your MATLAB [Startup Script (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html).</li></ol> | `--matlab-session-mode=existing` |
-| extension-file | To use custom tools, provide a path to a JSON file that defines your tools. For details, see [Use Custom Tools with the MATLAB MCP Core Server](guides/custom-tools.md). | Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` |
+| extension-file | To use custom MCP tools, provide a path to a JSON file that defines your tools. You can also use multiple extension files. For details on using custom tools, see [Use Custom Tools with the MATLAB MCP Core Server](guides/custom-tools.md). | <br><br>Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` <br><br> **Using multiple extension files:**<br><br>Windows:`--extension-file=C:\\path\\to\\tools-1.json --extension-file=C:\\path\\to\\tools-2.json`<br><br>Linux/macOS:`--extension-file=/path/to/tools1.json --extension-file=/path/to/tools2.json` <br><br> **Using environment variables:** <br><br> Windows: `MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\tools1.json;C:\Users\name\tools2.json` <br><br> Linux/macOS: `MW_MCP_SERVER_EXTENSION_FILE=/path/to/tools1.json:/path/to/tools2.json` |
 | log-folder | Specify the folder where the MCP server stores log files. If not specified, the server uses the default temporary folder of your operating system. | Windows: `--log-folder=C:\\Users\\name\\AppData\\Local\\Temp` <br><br> Linux/macOS: `--log-folder=/tmp/my-logs`  |
 | log-level | The log levels of the MCP server. Valid values, in order of decreasing verbosity, are `debug`, `info`, `warn`, and `error`. | `--log-level=debug` |
 | disable-telemetry | To disable anonymized data collection, set this argument to `true`. For details, see [Data Collection](#data-collection). | `--disable-telemetry=true` |
 
+**Multiple extension files**
+
+Windows:
+```
+--extension-file=C:\\path\\to\\my-tools.json --extension-file=C:\\path\\to\\my-other-tools.json
+```
+
+Linux and macOS:
+```
+--extension-file=/path/to/my-tools.json --extension-file=/path/to/my-other-tools.json
+```
+
+**Environment variables**
+
+Windows:
+```
+MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\my-tools.json;C:\Users\name\my-other-tools.json
+```
+
+Linux and macOS:
+```
+MW_MCP_SERVER_EXTENSION_FILE=/path/to/my-tools.json:/path/to/my-other-tools.json
+```
 ## Tools
 
 1. `detect_matlab_toolboxes`

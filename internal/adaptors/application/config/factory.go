@@ -54,7 +54,7 @@ type Config interface {
 	MATLABSessionConnectionTimeout() time.Duration
 	MATLABSessionDiscoveryTimeout() time.Duration
 	EmbeddedConnectorDetailsTimeout() time.Duration
-	ExtensionFile() string
+	ExtensionFiles() []string
 
 	// Telemetry
 	DisableTelemetry() bool

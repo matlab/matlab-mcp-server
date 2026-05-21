@@ -1,0 +1,36 @@
+{
+  "tools": [
+    {
+      "name": "compute_fibonacci",
+      "title": "Compute Fibonacci",
+      "description": "Computes the nth Fibonacci number",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "n": {"type": "number", "description": "Position in the Fibonacci sequence"}
+        },
+        "required": ["n"]
+      }
+    },
+    {
+      "name": "compute_fibonacci",
+      "title": "Compute Fibonacci Duplicate",
+      "description": "A duplicate tool with the same name",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "n": {"type": "number", "description": "Position in the Fibonacci sequence"}
+        },
+        "required": ["n"]
+      }
+    }
+  ],
+  "signatures": {
+    "compute_fibonacci": {
+      "function": "fibonacci",
+      "input": {
+        "order": ["n"]
+      }
+    }
+  }
+}

@@ -16,12 +16,14 @@ type userConfigEntry struct {
 	Description string `json:"description"`
 	Required    bool   `json:"required"`
 	Default     any    `json:"default"`
+	Multiple    bool   `json:"multiple,omitempty"`
 }
 
 type parameterForMCPB struct {
 	parameter.ParameterWithDescriptionFromMessageCatalog
 	Title        string
 	TypeOverride string
+	Multiple     bool
 }
 
 func GetUserConfig() (map[string]userConfigEntry, error) {
@@ -60,9 +62,10 @@ func GetUserConfig() (map[string]userConfigEntry, error) {
 			Title: "MATLAB Session Mode",
 		},
 		{
-			ParameterWithDescriptionFromMessageCatalog: defaultparameters.ExtensionFile(),
+			ParameterWithDescriptionFromMessageCatalog: defaultparameters.ExtensionFiles(),
 			Title:        "Extension File",
 			TypeOverride: "file",
+			Multiple:     true,
 		},
 		{
 			ParameterWithDescriptionFromMessageCatalog: defaultparameters.LogLevel(),
@@ -77,6 +80,7 @@ func GetUserConfig() (map[string]userConfigEntry, error) {
 			p.ParameterWithDescriptionFromMessageCatalog,
 			p.Title,
 			p.TypeOverride,
+			p.Multiple,
 		)
 
 		if err != nil {
@@ -102,6 +106,7 @@ func (f *entryFactory) fromParameter(
 	parameter parameter.ParameterWithDescriptionFromMessageCatalog,
 	title string,
 	typeOverride string,
+	multiple bool,
 ) (userConfigEntry, error) {
 	parameterType := typeOverride
 	if parameterType == "" {
@@ -115,11 +120,18 @@ func (f *entryFactory) fromParameter(
 		}
 	}
 
+	defaultValue := parameter.GetDefaultValue()
+	defaultSlice, isSlice := defaultValue.([]string)
+	if isSlice && defaultSlice == nil {
+		defaultValue = []string{}
+	}
+
 	return userConfigEntry{
 		Type:        parameterType,
 		Title:       title,
 		Description: f.messageCatalog.Get(parameter.GetDescriptionKey()),
 		Required:    false, // All of our parameters are optional
-		Default:     parameter.GetDefaultValue(),
+		Default:     defaultValue,
+		Multiple:    multiple,
 	}, nil
 }

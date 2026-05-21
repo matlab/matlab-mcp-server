@@ -15,7 +15,7 @@
         <entry key="InitializeMATLABOnStartupDescription">To initialize MATLAB as soon as you start the server, set this argument to true. By default, MATLAB only starts when the first tool is called. </entry>
         <entry key="DisplayModeDescription">Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. </entry>
         <entry key="MATLABSessionModeDescription">Specify how MATLAB sessions are managed. Use 'new' (default) to launch new MATLAB sessions from a local installation, or 'existing' to connect to an already running MATLAB instance.</entry>
-        <entry key="ExtensionFileDescription">Path to a JSON extension file that defines custom MCP tools. Each tool maps to a MATLAB function. If not specified, no custom tools are loaded.</entry>
+        <entry key="ExtensionFileDescription">Use custom MCP tools by providing the path to a JSON extension file that defines the tools. Each tool maps to a MATLAB function. You can use the argument multiple times to specify multiple extension files. If you do not specify an extension file, the MCP server does not load any custom tools.</entry>
         <entry key="SuccessfullySetupMATLAB">Successfully setup MATLAB.</entry>
     </message>
 </rsccat>

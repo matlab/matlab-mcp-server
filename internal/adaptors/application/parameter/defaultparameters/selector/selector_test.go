@@ -160,7 +160,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 		"MATLABSessionConnectionTimeout":     false,
 		"MATLABSessionDiscoveryTimeout":      false,
 		"EmbeddedConnectorDetailsTimeout":    false,
-		"ExtensionFile":                      false,
+		"ExtensionFiles":                     false,
 	}
 
 	mockAppDef.EXPECT().

@@ -154,6 +154,33 @@ func New_StartupErrors_BadValueForEnvVar_Error(
 	}
 }
 
+// StartupErrors_CustomToolNameCollisionAcrossFiles_Error defines an error corresponding to the "StartupErrors_CustomToolNameCollisionAcrossFiles" message catalog message
+type StartupErrors_CustomToolNameCollisionAcrossFiles_Error struct {
+	Attr0 string
+	Attr1 string
+	Attr2 string
+}
+
+// Error makes StartupErrors_CustomToolNameCollisionAcrossFiles_Error satisfy the error interface.
+func (e *StartupErrors_CustomToolNameCollisionAcrossFiles_Error) Error() string {
+	return "StartupErrors_CustomToolNameCollisionAcrossFiles_Error"
+}
+
+func (*StartupErrors_CustomToolNameCollisionAcrossFiles_Error) marker() {}
+
+// New_StartupErrors_CustomToolNameCollisionAcrossFiles_Error makes a new StartupErrors_CustomToolNameCollisionAcrossFiles_Error error.
+func New_StartupErrors_CustomToolNameCollisionAcrossFiles_Error(
+	attr0 string,
+	attr1 string,
+	attr2 string,
+) *StartupErrors_CustomToolNameCollisionAcrossFiles_Error {
+	return &StartupErrors_CustomToolNameCollisionAcrossFiles_Error{
+		Attr0: attr0,
+		Attr1: attr1,
+		Attr2: attr2,
+	}
+}
+
 // StartupErrors_CustomToolNameConflict_Error defines an error corresponding to the "StartupErrors_CustomToolNameConflict" message catalog message
 type StartupErrors_CustomToolNameConflict_Error struct {
 	Attr0 string

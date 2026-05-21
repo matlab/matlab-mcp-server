@@ -75,6 +75,36 @@ func (s *MCPBLauncherBehaviorSuite) TestEnvVars_UnsetBeforeExec() {
 	s.Empty(result.Env, "MCPB env vars should be unset before exec-ing the binary")
 }
 
+func (s *MCPBLauncherBehaviorSuite) TestArgs_ExtensionFilesExpandedToRepeatedFlags() {
+	result := s.bundle.Launch(s.T(), nil,
+		"--extension-files", "/path/to/tools-a.json", "/path/to/tools-b.json",
+	)
+
+	s.Equal([]string{
+		"--extension-file", "/path/to/tools-a.json",
+		"--extension-file", "/path/to/tools-b.json",
+	}, result.Args)
+}
+
+func (s *MCPBLauncherBehaviorSuite) TestArgs_ExtensionFilePathsWithSpacesPreserved() {
+	pathWithSpaces := mcpbundle.PathWithSpaces() + "/my-tools.json"
+
+	result := s.bundle.Launch(s.T(), nil, "--extension-files", pathWithSpaces)
+
+	s.Equal([]string{"--extension-file", pathWithSpaces}, result.Args)
+}
+
+func (s *MCPBLauncherBehaviorSuite) TestArgs_ExtensionFilesCombineWithEnvVarFlags() {
+	result := s.bundle.Launch(s.T(), map[string]string{
+		"__MATLAB_MCP_CORE_SERVER_MCPB_MATLAB_ROOT": "/opt/matlab",
+	}, "--extension-files", "/path/to/tools.json")
+
+	s.Contains(result.Args, "--matlab-root")
+	s.Contains(result.Args, "/opt/matlab")
+	s.Contains(result.Args, "--extension-file")
+	s.Contains(result.Args, "/path/to/tools.json")
+}
+
 func (s *MCPBLauncherBehaviorSuite) TestLauncher_ValidSyntax() {
 	s.Require().NoError(s.bundle.CheckLauncherSyntax())
 }

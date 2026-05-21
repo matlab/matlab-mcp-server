@@ -122,26 +122,46 @@ func (c *Configurator) GetToolsToAdd() ([]tools.Tool, error) {
 }
 
 func (c *Configurator) loadCustomTools(cfg config.Config) ([]tools.Tool, error) {
-	extensionFilePath := cfg.ExtensionFile()
-	if extensionFilePath == "" {
+	extensionFilePaths := cfg.ExtensionFiles()
+	if len(extensionFilePaths) == 0 {
 		return nil, nil
 	}
 
-	customTools, err := c.customToolFactory.LoadTools(extensionFilePath)
-	if err != nil {
-		return nil, err
-	}
+	var allCustomTools []tools.Tool
+	toolSourceFile := make(map[string]string)
 
-	for _, t := range customTools {
-		if c.isBuiltInSingleSessionToolName(t.Name()) {
-			return nil, messages.New_StartupErrors_CustomToolNameConflict_Error(
-				t.Name(),
-				extensionFilePath,
-			)
+	for _, filePath := range extensionFilePaths {
+		if filePath == "" {
+			continue
 		}
+
+		customTools, err := c.customToolFactory.LoadTools(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, t := range customTools {
+			toolName := t.Name()
+			if existingFile, exists := toolSourceFile[toolName]; exists {
+				return nil, messages.New_StartupErrors_CustomToolNameCollisionAcrossFiles_Error(
+					toolName,
+					existingFile,
+					filePath,
+				)
+			}
+			if c.isBuiltInSingleSessionToolName(toolName) {
+				return nil, messages.New_StartupErrors_CustomToolNameConflict_Error(
+					toolName,
+					filePath,
+				)
+			}
+			toolSourceFile[toolName] = filePath
+		}
+
+		allCustomTools = append(allCustomTools, customTools...)
 	}
 
-	return customTools, nil
+	return allCustomTools, nil
 }
 
 func (c *Configurator) isBuiltInSingleSessionToolName(name string) bool {

@@ -5,6 +5,7 @@ package functional_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/logs"
 	"github.com/matlab/matlab-mcp-core-server/tests/testutils/mcpclient"
@@ -42,17 +43,18 @@ func (s *MockMATLABTestSuite) SetupSuite() {
 	s.defaultEnv = env
 }
 
-// CreateSession creates a mock MATLAB session with debug logging enabled.
-// Additional CLI args (e.g. "--extension-file=...") are forwarded to the server.
-// Usage:
-//
-//	session, err := s.CreateSession(mockmatlab.HappyConfig())
-//	s.Require().NoError(err)
-//	defer s.CleanupSession(session, true)
-func (s *MockMATLABTestSuite) CreateSession(cfg mockmatlab.Config, args ...string) (*MockMATLABSession, error) {
+// CreateSession starts the MCP server with mock MATLAB on PATH and returns an active MCP session.
+// Pass extra env entries as KEY=VALUE strings to augment the default environment, or nil for defaults.
+// Additional CLI args (e.g. "--extension-file=...") are forwarded to the MCP server binary.
+func (s *MockMATLABTestSuite) CreateSession(cfg mockmatlab.Config, extraEnv []string, args ...string) (*MockMATLABSession, error) {
+	env := s.defaultEnv
+	if len(extraEnv) > 0 {
+		env = append(slices.Clone(s.defaultEnv), extraEnv...)
+	}
+
 	value, err := cfg.ToEnvValue()
 	s.Require().NoError(err, "failed to serialize mock config")
-	env := pathcontrol.UpdateEnvEntry(s.defaultEnv, mockmatlab.EnvMockMATLABConfig, value)
+	env = pathcontrol.UpdateEnvEntry(env, mockmatlab.EnvMockMATLABConfig, value)
 
 	preparedArgs, err := logs.PrepareSessionCLIArgs(args, "debug", "mcp-functional-logs-")
 	s.Require().NoError(err, "should prepare log args")
@@ -67,10 +69,7 @@ func (s *MockMATLABTestSuite) CreateSession(cfg mockmatlab.Config, args ...strin
 
 	ctx := s.T().Context()
 	client := mcpclient.NewClient(ctx, s.mcpServerPath, env, preparedArgs.Args...)
-	session, err := client.CreateSession(ctx)
-	if err != nil {
-		return nil, err
-	}
+	session, sessionErr := client.CreateSession(ctx)
 
 	loggedSession, err := s.sessionFactory.New(
 		session,
@@ -88,7 +87,7 @@ func (s *MockMATLABTestSuite) CreateSession(cfg mockmatlab.Config, args ...strin
 	return &MockMATLABSession{
 		LoggedSession:    loggedSession,
 		mockMATLABLogDir: mockMATLABLogDir,
-	}, nil
+	}, sessionErr
 }
 
 func (s *MockMATLABTestSuite) CleanupSession(session *MockMATLABSession, assertNoErrorLogs bool) {
