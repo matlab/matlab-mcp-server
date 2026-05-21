@@ -1,0 +1,27 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Close issues referenced in release notes
+
+on:
+    release:
+        types: [published]
+
+permissions:
+    issues: write
+
+jobs:
+    close-released-issues:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install script dependencies
+              run: npm install
+              working-directory: .github/scripts
+
+            - name: Close referenced issues
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const closeReferencedIssues = require('./.github/scripts/src/close-referenced-issues.js');
+                      return closeReferencedIssues({ github, context, core });
