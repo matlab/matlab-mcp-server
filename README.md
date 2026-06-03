@@ -14,6 +14,7 @@ To assist your agent in using MATLAB and Simulink, you can use skills from [MATL
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [GitHub Copilot in Visual Studio Code](#github-copilot-in-visual-studio-code)
+  - [Kiro](#kiro)
 - [Arguments](#arguments)
 - [Tools](#tools)
 - [Resources](#resources)
@@ -94,6 +95,32 @@ In your VS Code workspace, create a file named `.vscode/mcp.json`. Insert the fo
 }
 ```
 For more information about using MCP servers in VS Code, see [Add and Manage MCP servers in VS Code (VS Code)](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file).
+
+### Kiro
+
+Edit your user-level MCP configuration file at `~/.kiro/settings/mcp.json`. If the file does not exist, create the directory and file.
+
+Add the following entry to the `mcpServers` object (merge with existing entries if the file already has other MCP servers configured):
+
+```json
+{
+    "mcpServers": {
+        "matlab": {
+            "command": "/fullpath/to/matlab-mcp-core-server",
+            "args": ["--matlab-root", "/path/to/MATLAB/R2025b",
+                     "--matlab-display-mode", "desktop"],
+            "disabled": false,
+            "autoApprove": []
+        }
+    }
+}
+```
+
+Replace `/fullpath/to/matlab-mcp-core-server` with the absolute path to the server binary you acquired in the setup, and `/path/to/MATLAB/R2025b` with the path to your MATLAB installation. If MATLAB is on your system PATH, you can omit the `--matlab-root` argument.
+
+Kiro auto-reconnects to MCP servers when the configuration file changes. You can also use the command palette and search for "MCP" to find reconnect options.
+
+For per-project configuration, create `mcp.json` in your project root with the same format shown above.
 
 ## Arguments
 
