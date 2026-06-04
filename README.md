@@ -1,5 +1,13 @@
 # MATLAB MCP Core Server
 
+<p align="center">
+  English •
+  <a href="l10n/README.es.md">Español</a> •
+  <a href="l10n/README.ja.md">日本語</a> •
+  <a href="l10n/README.ko.md">한국어</a> •
+  <a href="l10n/README.zh-cn.md">简体中文</a>
+</p>
+
 > [!WARNING]
 > On June 18, 2026 (v0.11.0), MATLAB MCP Core Server will be renamed to MATLAB MCP Server. To use the latest version of the server after this date, you must update your settings.
 >

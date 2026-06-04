@@ -1,5 +1,13 @@
 # Use Custom Tools with MATLAB MCP Core Server
 
+<p align="center">
+  English •
+  <a href="../l10n/guides/custom-tools.es.md">Español</a> •
+  <a href="../l10n/guides/custom-tools.ja.md">日本語</a> •
+  <a href="../l10n/guides/custom-tools.ko.md">한국어</a> •
+  <a href="../l10n/guides/custom-tools.zh-cn.md">简体中文</a>
+</p>
+
 This guide shows how to use custom tools with the MATLAB MCP Core Server. 
 
 You can expose any MATLAB functions as MCP tools defined in JSON files. The server loads your tool definitions at startup and registers them alongside the built-in tools. When your AI application calls a custom tool, the server executes the MATLAB function and returns the command window output. The MATLAB function must be on the MATLAB path. To update your tool definitions, edit the extension files and restart the server.
