@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 9e25655af07ee633bcb5fe5bea5a0c9a844e7041
+- Commit: 8df303db49ea1c497eb0128257e81f16e1fcba34
 -->
 
 # MATLAB MCP Core Server
@@ -14,6 +14,15 @@ Source English Markdown:
   <a href="README.ko.md">한국어</a> •
   <a href="README.zh-cn.md">简体中文</a>
 </p>
+
+> [!WARNING]
+> El 18 de junio de 2026 (v0.11.0), MATLAB MCP Core Server pasará a llamarse MATLAB MCP Server. Para usar la última versión del servidor después de esta fecha, debe actualizar sus ajustes.
+>
+> | Cambios | Acción requerida |
+> |:-------:|:---------------:|
+> | **URL del repositorio**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Ninguna. GitHub redirige automáticamente. |
+> | **Nombres de binarios**<br>Nuevo formato: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>Ejemplo: `matlab-mcp-server-windows-x64.exe` | Actualice el nombre del binario en los ajustes de configuración de su aplicación de IA, generalmente un archivo `.json`. |
+> | **Módulo Go**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Si está usando el módulo MATLAB MCP Core Server en un proyecto de Go, actualice el nombre del módulo en `go.mod` y sus declaraciones de importación. |
 
 Ejecute MATLAB® con aplicaciones de IA mediante el servidor oficial MATLAB MCP Server de MathWorks®. MATLAB MCP Core Server permite a las aplicaciones de IA:
 

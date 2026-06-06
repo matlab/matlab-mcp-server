@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 9e25655af07ee633bcb5fe5bea5a0c9a844e7041
+- Commit: 8df303db49ea1c497eb0128257e81f16e1fcba34
 -->
 
 # MATLAB MCP Core Server
@@ -14,6 +14,15 @@ Source English Markdown:
   <a href="README.ko.md">한국어</a> •
   简体中文
 </p>
+
+> [!WARNING]
+> 自 2026 年 6 月 18 日 (v0.11.0)，MATLAB MCP Core Server 将更名为 MATLAB MCP Server。在此日期之后，若要使用最新版本的服务器，必须更新您的设置。
+>
+> | 变更 | 所需操作 |
+> |:-------:|:---------------:|
+> | **仓库 URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 无需任何操作。GitHub 会自动重定向。 |
+> | **二进制文件名称**<br>新格式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>示例: `matlab-mcp-server-windows-x64.exe` | 在 AI 应用程序的配置设置 (通常为 `.json` 文件) 中更新二进制文件的名称。 |
+> | **Go 模块**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 如果您在 Go 工程中使用了 MATLAB MCP Core Server 模块，请更新 `go.mod` 中的模块名称以及您的导入声明。 |
 
 使用 MathWorks® 官方的 MATLAB MCP Server，通过 AI 应用程序运行 MATLAB®。MATLAB MCP Core Server 允许您的 AI 应用程序执行以下操作:
 

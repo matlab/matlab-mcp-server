@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: 9e25655af07ee633bcb5fe5bea5a0c9a844e7041
+- Commit: 8df303db49ea1c497eb0128257e81f16e1fcba34
 -->
 
 # MATLAB MCP Core Server
@@ -14,6 +14,15 @@ Source English Markdown:
   <a href="README.ko.md">한국어</a> •
   <a href="README.zh-cn.md">简体中文</a>
 </p>
+
+> [!WARNING]
+> 2026 年 6 月 18 日 (v0.11.0) に、MATLAB MCP Core Server は MATLAB MCP Server に名称変更されます。この日以降に最新バージョンのサーバーを使用するには、設定を更新する必要があります。
+>
+> | 変更点 | 必要な対応 |
+> |:-------:|:---------------:|
+> | **リポジトリ URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 不要。GitHub が自動的にリダイレクトします。 |
+> | **バイナリ名**<br>新しい形式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>例: `matlab-mcp-server-windows-x64.exe` | AI アプリケーションの構成設定 (通常は `.json` ファイル) でバイナリ名を更新してください。 |
+> | **Go モジュール**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Go プロジェクトで MATLAB MCP Core Server モジュールを使用している場合は、`go.mod` 内のモジュール名とインポート宣言を更新してください。 |
 
 MathWorks® 公式の MATLAB MCP Server を使用して、AI アプリケーションから MATLAB® を実行できます。MATLAB MCP Core Server を使用すると、AI アプリケーションから以下の操作が可能になります。
 
