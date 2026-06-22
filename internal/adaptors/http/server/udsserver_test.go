@@ -21,7 +21,8 @@ func TestUDSServer_Serve_Shutdown_HappyPath(t *testing.T) {
 	mockOSLayer := &servermocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	socketPath := filepath.Join(t.TempDir(), "test.sock")
+	socketPath := filepath.Join(os.TempDir(), "uds-"+t.Name()+".sock") //nolint:usetesting // t.TempDir() on macOS exceeds the 105-char UDS sun_path limit
+	t.Cleanup(func() { _ = os.Remove(socketPath) })
 
 	mockOSLayer.EXPECT().
 		RemoveAll(socketPath).

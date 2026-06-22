@@ -28,7 +28,7 @@ func TestOS_Version_HappyPath(t *testing.T) {
 	expectedVersion := "macOS 15.3.1"
 
 	mockOSLayer.EXPECT().
-		Command("sw_vers", "-productVersion").
+		Command("sw_vers", []string{"-productVersion"}).
 		Return(mockCmd).
 		Once()
 
@@ -59,7 +59,7 @@ func TestOS_Version_CommandOutputError(t *testing.T) {
 	defer mockCmd.AssertExpectations(t)
 
 	mockOSLayer.EXPECT().
-		Command("sw_vers", "-productVersion").
+		Command("sw_vers", []string{"-productVersion"}).
 		Return(mockCmd).
 		Once()
 

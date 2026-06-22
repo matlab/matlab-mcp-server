@@ -15,7 +15,9 @@ import (
 
 func Test_GetPath_HappyPath(t *testing.T) {
 	// Arrange
-	placeholder, err := fakematlab.NewPlaceholder(t.TempDir())
+	tempDir, err := filepath.EvalSymlinks(t.TempDir())
+	require.NoError(t, err)
+	placeholder, err := fakematlab.NewPlaceholder(tempDir)
 	require.NoError(t, err)
 
 	t.Setenv("MCP_MATLAB_PATH", placeholder.Path())
