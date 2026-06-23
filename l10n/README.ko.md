@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: c955420af99d7f97ac69d499960619d0a08e23d9
+- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
 -->
 
 # MATLAB MCP Server
@@ -23,6 +23,7 @@ Source English Markdown:
 > | **바이너리 이름**<br>새 형식: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>예: `matlab-mcp-server-windows-x64.exe` | AI 애플리케이션의 구성 설정(일반적으로 `.json` 파일)에서 바이너리 이름을 업데이트하십시오. |
 > | **툴박스**<br>  업데이트 및 이름 변경: `MATLAB MCP Core Server Toolbox` → **`MATLAB MCP Server Toolbox`** | `./matlab-mcp-server --setup-matlab`을 실행하여 최신 버전의 툴박스를 설치하십시오. 기존 MATLAB 세션에 연결하려면 이 툴박스가 필요합니다. 자세한 내용은 [인수](#인수) 섹션의 `matlab-session-mode`를 참조하십시오. |
 > | **리포지토리 URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 없음. GitHub가 자동으로 리디렉션합니다. |
+> | **MCP 번들**<br>업데이트 및 이름 변경: `matlab-mcp-core-server.mcpb` → **`matlab-mcp-server.mcpb`** | v0.11.0 이전에 MATLAB MCP 번들을 사용하여 Claude Desktop에 MCP 서버를 설치한 경우, 먼저 서버를 제거한 다음 [최신 릴리스](https://github.com/matlab/matlab-mcp-server/releases/latest) 페이지에서 새 `matlab-mcp-server.mcpb` 번들을 다운로드하여 서버를 다시 설치하십시오. 자세한 내용은 [Claude Desktop](#claude-desktop) 섹션을 참조하십시오. |
 > | **Go 모듈**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Go 프로젝트에서 MATLAB MCP Core Server 모듈을 사용하고 있는 경우 `go.mod`의 모듈 이름과 import 선언을 업데이트하십시오. |
 
 MathWorks®의 공식 MATLAB MCP Server를 사용하여 AI 애플리케이션에서 MATLAB®을 실행하십시오. MATLAB MCP Server를 사용하면 AI 애플리케이션이 다음을 수행할 수 있습니다.

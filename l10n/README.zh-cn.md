@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: c955420af99d7f97ac69d499960619d0a08e23d9
+- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
 -->
 
 # MATLAB MCP Server
@@ -23,6 +23,7 @@ Source English Markdown:
 > | **二进制文件名称**<br>新格式: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>示例: `matlab-mcp-server-windows-x64.exe` | 在 AI 应用程序的配置设置 (通常为 `.json` 文件) 中更新二进制文件的名称。 |
 > | **工具箱**<br>  已更新并更名: `MATLAB MCP Core Server Toolbox` → **`MATLAB MCP Server Toolbox`** | 运行 `./matlab-mcp-server --setup-matlab` 以安装最新版本的工具箱。连接到现有 MATLAB 会话时需要此工具箱。有关详细信息，请参阅[参量](#参量)部分中的 `matlab-session-mode`。 |
 > | **仓库 URL**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 无需任何操作。GitHub 会自动重定向。 |
+> | **MCP 捆绑包**<br>已更新并重命名: `matlab-mcp-core-server.mcpb` → **`matlab-mcp-server.mcpb`** | 如果您在 v0.11.0 之前使用 MATLAB MCP 捆绑包在 Claude Desktop 中安装了 MCP 服务器，请先卸载服务器，然后从[最新版本](https://github.com/matlab/matlab-mcp-server/releases/latest)页面下载新的 `matlab-mcp-server.mcpb` 捆绑包并重新安装服务器。有关详细信息，请参阅 [Claude Desktop](#claude-desktop) 部分。 |
 > | **Go 模块**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | 如果您在 Go 工程中使用了 MATLAB MCP Core Server 模块，请更新 `go.mod` 中的模块名称以及您的导入声明。 |
 
 使用 MathWorks® 官方的 MATLAB MCP Server，通过 AI 应用程序运行 MATLAB®。MATLAB MCP Server 允许您的 AI 应用程序执行以下操作:

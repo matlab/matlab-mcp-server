@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: c955420af99d7f97ac69d499960619d0a08e23d9
+- Commit: 2e4ec18b98616d567cca9412728a2a4fba1bb3be
 -->
 
 # MATLAB MCP Server
@@ -23,6 +23,7 @@ Source English Markdown:
 > | **Nombres de binarios**<br>Nuevo formato: **`matlab-mcp-server-<os>-<arch>[.exe]`**<br>Ejemplo: `matlab-mcp-server-windows-x64.exe` | Actualice el nombre del binario en los ajustes de configuración de su aplicación de IA, generalmente un archivo `.json`. |
 > | **Toolbox**<br>  Actualizada y renombrada: `MATLAB MCP Core Server Toolbox` → **`MATLAB MCP Server Toolbox`** | Instale la última versión de la toolbox ejecutando `./matlab-mcp-server --setup-matlab`. Necesita la toolbox para conectarse a sesiones de MATLAB existentes. Para obtener más información, consulte `matlab-session-mode` en la sección [Argumentos](#argumentos). |
 > | **URL del repositorio**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Ninguna. GitHub redirige automáticamente. |
+> | **MCP Bundle**<br>Actualizado y renombrado: `matlab-mcp-core-server.mcpb` → **`matlab-mcp-server.mcpb`** | Si usó el paquete MCP de MATLAB para instalar el servidor MCP en Claude Desktop antes de v0.11.0, primero desinstale el servidor, luego descargue el nuevo paquete `matlab-mcp-server.mcpb` desde la página de la [última versión](https://github.com/matlab/matlab-mcp-server/releases/latest) y úselo para reinstalar el servidor. Para obtener más información, consulte la sección de [Claude Desktop](#claude-desktop). |
 > | **Módulo Go**<br>`github.com/matlab/matlab-mcp-core-server` → **`github.com/matlab/matlab-mcp-server`** | Si está usando el módulo MATLAB MCP Core Server en un proyecto de Go, actualice el nombre del módulo en `go.mod` y sus declaraciones de importación. |
 
 Ejecute MATLAB® con aplicaciones de IA mediante el servidor oficial MATLAB MCP Server de MathWorks®. MATLAB MCP Server permite a las aplicaciones de IA:
