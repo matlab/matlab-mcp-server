@@ -50,7 +50,7 @@ To assist your agent in using MATLAB and Simulink, you can use skills from [MATL
    - For macOS, first download the latest release by running the following command in your terminal:
      - For Apple silicon processors, run:
           ```sh
-          curl -L -o ~/Downloads/matlab-mcp-server https://github.com/matlab/matlab-mcp-server/releases/latest/download/matlab-mcp-server-macos-amd64
+          curl -L -o ~/Downloads/matlab-mcp-server https://github.com/matlab/matlab-mcp-server/releases/latest/download/matlab-mcp-server-macos-arm64
           ```
       - For Intel processors, run:
           ```sh
