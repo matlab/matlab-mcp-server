@@ -131,7 +131,7 @@ func (s *TelemetryTestSuite) TestTelemetry_ToolCallRequestTelemetry() {
 	s.Require().NoError(err, "should invoke the extension tool")
 
 	// Step 3: close the session so the server flushes telemetry on shutdown.
-	s.CleanupSession(session, true)
+	s.CleanupSession(session, assertNoErrorLogs)
 
 	// Step 4: wait for telemetry. The two tool calls may arrive in separate
 	// flushes, so wait until both names are present, not just one flush.

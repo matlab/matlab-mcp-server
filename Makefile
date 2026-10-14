@@ -28,7 +28,7 @@ ifeq ($(OS),Windows_NT)
 	RACE_FLAG =
 	RM_DIR = if (Test-Path "$(1)") { Remove-Item -Recurse -Force "$(1)" }
 	MK_DIR = New-Item -ItemType Directory -Force -Path "$(1)" | Out-Null
-	CP = Copy-Item $(1) $(2)
+	CP = Copy-Item "$(1)" "$(2)"
 	PATHSEP = ;
 	BIN_PATH = $(CURDIR)/.bin/win64
 	EXE_SUFFIX = .exe
@@ -106,6 +106,12 @@ UNIT_TEST_PKGS := ./internal/... ./pkg/... ./tests/testutils/...
 INTEGRATION_TEST_PKGS := ./tests/integration/...
 FUNCTIONAL_TEST_PKGS := ./tests/functional/...
 SYSTEM_TEST_PKGS := ./tests/system/...
+
+# Must stay equal to a substring of startupCode in localmatlabsession.go.
+MATLAB_MCP_PROCESS_MARKER := matlab_mcp.initializeMCP
+
+# Must stay equal to startupDirName in externalmatlab.go.
+MATLAB_SYSTEM_TEST_PROCESS_MARKER := mcp-system-test-matlab
 
 # Scoped exports prevent polluting other commands (e.g. npm uses HOST)
 TEST_TARGETS := \
@@ -197,8 +203,7 @@ ci-functional-tests: ensure-binary-executable
 	go test $(RACE_FLAG) -json -count=1 $(FUNCTIONAL_TEST_PKGS)
 
 ci-system-tests: ensure-binary-executable
-	go test $(RACE_FLAG) -timeout 120m -json -count=1 $(SYSTEM_TEST_PKGS)
-	@$(CHECK_MATLAB_LEAKS)
+	@$(call RUN_AND_REAP,go test $(RACE_FLAG) -timeout 120m -json -count=1 $(SYSTEM_TEST_PKGS),KILL_LEAKED_MATLABS)
 
 ci-matlab-system-tests: matlab-system-tests
 
@@ -397,8 +402,7 @@ functional-tests:
 	go tool gotestsum --packages="$(FUNCTIONAL_TEST_PKGS)" -- -race
 
 system-tests:
-	go tool gotestsum --packages="$(SYSTEM_TEST_PKGS)" -- -race -count=1 -timeout 30m
-	@$(CHECK_MATLAB_LEAKS)
+	@$(call RUN_AND_REAP,go tool gotestsum --packages="$(SYSTEM_TEST_PKGS)" -- -race -count=1 -timeout 30m,REPORT_LEAKED_MATLABS)
 
 matlab-system-tests: export MATLAB_MCP_SERVER_MLTBX_DIR := $(MATLAB_MCP_SERVER_MLTBX_DIR)
 matlab-system-tests:
@@ -406,7 +410,7 @@ matlab-system-tests:
 
 # Tests should clean up all MATLAB sessions; this catches leaks
 check-matlab-leaks:
-	@$(CHECK_MATLAB_LEAKS)
+	@$(call REAP_MATLAB_LEAKS,REPORT_LEAKED_MATLABS)
 
 # =============================================================================
 # 8. MCPB
@@ -488,42 +492,91 @@ endif
 
 ifeq ($(OS),Windows_NT)
 
-define CHECK_MATLAB_LEAKS_CMD
+define REAP_MATLAB_LEAKS_CMD
 powershell -NoProfile -ExecutionPolicy Bypass -Command "& {
     Write-Host 'Waiting for processes to settle...';
     Start-Sleep -Seconds 5;
     Write-Host 'Checking for leaked MATLAB processes...';
-    `$$p = Get-Process -Name MATLAB -ErrorAction SilentlyContinue |
-        Where-Object { `$$_.CommandLine -like '*matlab-mcp-server*' };
-    if (`$$p) {
-        Write-Host 'WARNING: Found leaked MATLAB processes:';
-        `$$p | Format-Table Id,ProcessName,StartTime;
-        exit 1
-    } else {
-        Write-Host 'No leaked MATLAB processes found.'
-    }
+    `$$leaked = Get-CimInstance Win32_Process |
+        Where-Object { `$$_.Name -eq 'MATLAB.exe' -and (`$$_.CommandLine -like '*$(MATLAB_MCP_PROCESS_MARKER)*' -or `$$_.CommandLine -like '*$(MATLAB_SYSTEM_TEST_PROCESS_MARKER)*') };
+    if (-not `$$leaked) {
+        Write-Host 'No leaked MATLAB processes found.';
+        exit 0
+    };
+    Write-Host 'ERROR: Found leaked MATLAB processes:';
+    `$$leaked | ForEach-Object { Write-Host ('  ' + `$$_.ProcessId + '  ' + `$$_.CommandLine) };
+    $($(1))
+    exit 1
 }"
+endef
+
+define KILL_LEAKED_MATLABS
+`$$leaked | ForEach-Object { taskkill /T /F /PID `$$_.ProcessId 2>&1 | Out-Null };
+Write-Host 'Killed the leaked MATLAB processes. A leak changes the result of later runs, so this fails the job.';
+endef
+
+define REPORT_LEAKED_MATLABS
+Write-Host 'Stop these MATLAB processes before the next run. A leak changes the result of later runs, so this fails the run.';
+endef
+
+define RUN_AND_REAP_CMD
+$$status = 0;
+$(1);
+if (-not $$?) { $$status = if ($$LASTEXITCODE) { $$LASTEXITCODE } else { 1 } };
+$(call REAP_MATLAB_LEAKS,$(2));
+if ($$LASTEXITCODE -ne 0 -and $$status -eq 0) { $$status = 1 };
+exit $$status
 endef
 
 else
 
-define CHECK_MATLAB_LEAKS_CMD
+define REAP_MATLAB_LEAKS_CMD
 echo "Waiting for processes to settle...";
 sleep 5;
 echo "Checking for leaked MATLAB processes...";
-leaked=$$(pgrep -a -f -l 'addpath\(sessionPath\);matlab_mcp\.initializeMCP\(\);clear sessionPath;' | grep -v 'make\|grep' || true);
-if [ -n "$$leaked" ]; then
-    echo "WARNING: Found leaked MATLAB processes:";
-    echo "$$leaked";
-    exit 1;
-else
+leaked=$$(pgrep -f '$(MATLAB_MCP_PROCESS_MARKER)|$(MATLAB_SYSTEM_TEST_PROCESS_MARKER)' 2>/dev/null |
+    while read -r pid; do
+        if ps -o comm= -p "$$pid" 2>/dev/null | sed 's|.*/||' | grep -qix matlab; then echo "$$pid"; fi;
+    done);
+if [ -z "$$leaked" ]; then
     echo "No leaked MATLAB processes found.";
+else
+    echo "ERROR: Found leaked MATLAB processes:";
+    for pid in $$leaked; do ps -o pid= -o args= -p "$$pid"; done;
+    $($(1))
+    false;
 fi
+endef
+
+define KILL_LEAKED_MATLABS
+kill -9 $$leaked 2>/dev/null || true;
+echo "Killed the leaked MATLAB processes. A leak changes the result of later runs, so this fails the job.";
+endef
+
+define REPORT_LEAKED_MATLABS
+echo "Stop these MATLAB processes before the next run. A leak changes the result of later runs, so this fails the run.";
+endef
+
+define RUN_AND_REAP_CMD
+status=0;
+$(1) || status=$$?;
+$(call REAP_MATLAB_LEAKS,$(2)) || { [ "$$status" -eq 0 ] && status=1; };
+exit "$$status"
 endef
 
 endif
 
-CHECK_MATLAB_LEAKS := $(strip $(CHECK_MATLAB_LEAKS_CMD))
+# Only CI kills a leaked MATLAB. On a developer machine, the markers also match the
+# MATLABs that the developer's own MCP servers started.
+# Usage: $(call REAP_MATLAB_LEAKS,KILL_LEAKED_MATLABS|REPORT_LEAKED_MATLABS)
+
+REAP_MATLAB_LEAKS = $(strip $(REAP_MATLAB_LEAKS_CMD))
+
+# Runs the tests and the reaper in one recipe line, so make cannot skip the reaper
+# when the tests fail.
+# Usage: $(call RUN_AND_REAP,<test command>,KILL_LEAKED_MATLABS|REPORT_LEAKED_MATLABS)
+
+RUN_AND_REAP = $(strip $(RUN_AND_REAP_CMD))
 
 # Fails CI if generated files are stale.
 # Usage: $(call CHECK_GIT_CLEAN,<description>,<optional-path-scope>)

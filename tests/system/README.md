@@ -53,6 +53,39 @@ go test -v ./tests/system/... -run TestInteractiveDevelopmentWorkflow
 go test -v ./tests/system/... -run TestParallelExperimentationWorkflow
 ```
 
+### Existing Session Tests
+
+`TestExistingSessionSuite` installs the MATLAB MCP Server Toolbox, starts MATLAB sessions, and connects the server to them.
+The toolbox needs MATLAB R2023a or later.
+With an earlier release, the suite skips.
+
+The suite checks that:
+
+- In `existing` mode, the server fails to attach when no MATLAB is shared.
+- In `existing` and `auto` modes, the server attaches to the shared MATLAB.
+- The server ignores a MATLAB that is not shared.
+- When a second MATLAB is shared, the server attaches to it.
+- In `auto` mode, the server starts a local MATLAB when no MATLAB is shared.
+- Each shared MATLAB stays alive after the server disconnects.
+
+The suite sets `HOME`, `APPDATA` and `MATLAB_PREFDIR` to folders in a temporary folder.
+The server and the toolbox find the session details folder from `HOME`, or from `APPDATA` on Windows, so your shared MATLAB sessions do not change the result.
+With `MATLAB_PREFDIR` set, the toolbox install does not change your real MATLAB settings or add-ons.
+
+### Leaked MATLAB Check
+
+After the system tests, the Makefile looks for MATLAB processes that the tests did not stop.
+It finds a MATLAB process when its command line contains one of these markers:
+
+- `MATLAB_MCP_PROCESS_MARKER`, for a MATLAB that the server started.
+- `MATLAB_SYSTEM_TEST_PROCESS_MARKER`, for a MATLAB that the existing session tests started.
+
+A leaked MATLAB makes the run fail.
+`make system-tests` only reports a leaked MATLAB, because the markers also find MATLAB sessions that your own MCP servers started.
+`make ci-system-tests` stops each leaked MATLAB.
+`go test` does not do this check.
+After you run `go test` directly, run `make check-matlab-leaks`.
+
 ## Adding New Tests
 
 When adding new features, think in terms of **user scenarios** rather than individual tools:

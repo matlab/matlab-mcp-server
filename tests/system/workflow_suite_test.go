@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/tests/system/testdata"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/fileuri"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabtempdir"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpclient"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/suite"
@@ -55,17 +57,11 @@ func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 
 			// Provide the test data directory as an MCP root so the server uses it as
 			// MATLAB's starting directory (fallback when no --initial-working-folder is set).
-			// File URIs require the path to start with "/" (e.g., file:///C:/path on Windows).
-			slashPath := filepath.ToSlash(s.testDataDir)
-			if !strings.HasPrefix(slashPath, "/") {
-				slashPath = "/" + slashPath
-			}
-			testDataURI := "file://" + slashPath
 			sessionOpts := []mcpclient.CreateSessionOption{
-				mcpclient.WithRoots(&mcp.Root{URI: testDataURI, Name: "test-data"}),
+				mcpclient.WithRoots(&mcp.Root{URI: fileuri.ToFileURI(s.testDataDir), Name: "test-data"}),
 			}
 			session := s.CreateMCPSession(ctx, nil, sessionOpts, "--matlab-display-mode="+tc.displayMode)
-			defer s.CleanupSession(session, true)
+			defer s.CleanupSession(session, assertNoErrorLogs)
 
 			// Step 1: Read coding guidelines (AI references standards before writing code)
 			guidelines, err := session.ReadResource(ctx, "guidelines://coding")
@@ -109,7 +105,7 @@ func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 			s.Contains(output, s.testScriptPath(), "script should be found from the MCP root directory")
 
 			// Step 4b: Verify projectPath parameter changes MATLAB's working directory
-			tmpDir := s.T().TempDir()
+			tmpDir := matlabtempdir.New(s.T(), "workflow-project-")
 			output, err = session.EvaluateCode(ctx, "pwd", tmpDir)
 			s.Require().NoError(err)
 			s.Contains(output, tmpDir, "projectPath should change MATLAB's working directory")
@@ -174,7 +170,7 @@ func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 func (s *WorkflowTestSuite) TestParallelExperimentationWorkflow() {
 	ctx := s.T().Context()
 	mcpSession := s.CreateMCPSession(ctx, nil, nil, "--use-single-matlab-session=false")
-	defer s.CleanupSession(mcpSession, true)
+	defer s.CleanupSession(mcpSession, assertNoErrorLogs)
 
 	sm := mcpSession.NewSessionManager()
 

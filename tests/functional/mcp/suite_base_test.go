@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-server/tests/testutils/fakematlab"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/fileuri"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpclient"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpserver"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/pathcontrol"
@@ -92,18 +93,9 @@ func (s *MCPTestSuite) CreateSessionWithoutRootsCapability() *mcpclient.MCPClien
 	return session
 }
 
-// ToFileURI converts an absolute directory path to a file:// URI.
-func ToFileURI(dir string) string {
-	slashPath := filepath.ToSlash(dir)
-	if !strings.HasPrefix(slashPath, "/") {
-		slashPath = "/" + slashPath
-	}
-	return "file://" + slashPath
-}
-
 // NewRootFromDir creates an mcp.Root from a local directory path.
 func NewRootFromDir(dir, name string) *mcp.Root {
-	return &mcp.Root{URI: ToFileURI(dir), Name: name}
+	return &mcp.Root{URI: fileuri.ToFileURI(dir), Name: name}
 }
 
 // WaitForStartupInfo polls the fake MATLAB output file until startup info is available.
