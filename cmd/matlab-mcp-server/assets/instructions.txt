@@ -1,4 +1,4 @@
-This server provides tools to inspect, analyze, run, and test MATLAB code using a locally installed MATLAB instance. The MATLAB desktop is visible to the user. Graphical output appears within the MATLAB UI.
+This server provides tools to inspect, analyze, run, and test MATLAB code using a locally installed MATLAB instance.
 
 Available tools:
 
