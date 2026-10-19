@@ -64,6 +64,10 @@ EMBEDDED_MLTBX_DIR := $(CURDIR)/internal/adaptors/matlabmanager/addonmanager/ins
 MATLAB_MCP_SERVER_BUILD_DIR ?= $(CURDIR)/.bin
 MATLAB_MCP_SERVER_MLTBX_DIR ?= $(EMBEDDED_MLTBX_DIR)
 
+# --- Go tools ---
+
+GO_TOOL := go tool -modfile=internal/tools/go.mod
+
 # --- Build paths ---
 
 TOOLS_BIN_DIR := $(MATLAB_MCP_SERVER_BUILD_DIR)/tools
@@ -212,7 +216,7 @@ ci-matlab-system-tests: matlab-system-tests
 # =============================================================================
 
 wire:
-	go tool wire github.com/matlab/matlab-mcp-server/internal/wire
+	$(GO_TOOL) wire github.com/matlab/matlab-mcp-server/internal/wire
 
 check-wire: wire
 	@$(call CHECK_GIT_CLEAN,Wire generated code)
@@ -220,7 +224,7 @@ check-wire: wire
 mockery:
 	@$(call RM_DIR,./mocks)
 	@$(call RM_DIR,./tests/mocks)
-	go tool mockery
+	$(GO_TOOL) mockery
 
 check-mockery: mockery
 	@$(call CHECK_GIT_CLEAN,Generated mocks)
@@ -230,10 +234,10 @@ check-mockery: mockery
 # =============================================================================
 
 lint:
-	go tool golangci-lint run ./...
+	$(GO_TOOL) golangci-lint run ./...
 
 fix-lint:
-	go tool golangci-lint run ./... --fix
+	$(GO_TOOL) golangci-lint run ./... --fix
 
 matlab-lint:
 	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean lint;"
@@ -377,7 +381,7 @@ mcp-inspector:
 	npx @modelcontextprotocol/inspector matlab-mcp-server
 
 unit-tests:
-	go tool gotestsum --packages="$(UNIT_TEST_PKGS)" -- -race -coverprofile cover.out
+	$(GO_TOOL) gotestsum --packages="$(UNIT_TEST_PKGS)" -- -race -coverprofile cover.out
 
 matlab-unit-tests:
 	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean unit-tests integration-tests;"
@@ -396,13 +400,13 @@ matlab-integration-tests:
 endif
 
 integration-tests:
-	go tool gotestsum --packages="$(INTEGRATION_TEST_PKGS)" -- -race
+	$(GO_TOOL) gotestsum --packages="$(INTEGRATION_TEST_PKGS)" -- -race
 
 functional-tests:
-	go tool gotestsum --packages="$(FUNCTIONAL_TEST_PKGS)" -- -race
+	$(GO_TOOL) gotestsum --packages="$(FUNCTIONAL_TEST_PKGS)" -- -race
 
 system-tests:
-	@$(call RUN_AND_REAP,go tool gotestsum --packages="$(SYSTEM_TEST_PKGS)" -- -race -count=1 -timeout 30m,REPORT_LEAKED_MATLABS)
+	@$(call RUN_AND_REAP,$(GO_TOOL) gotestsum --packages="$(SYSTEM_TEST_PKGS)" -- -race -count=1 -timeout 30m,REPORT_LEAKED_MATLABS)
 
 matlab-system-tests: export MATLAB_MCP_SERVER_MLTBX_DIR := $(MATLAB_MCP_SERVER_MLTBX_DIR)
 matlab-system-tests:
