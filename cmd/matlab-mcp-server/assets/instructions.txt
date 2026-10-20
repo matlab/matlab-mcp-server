@@ -11,7 +11,7 @@ Available tools:
 Available resources:
 
 - guidelines://coding. Provides comprehensive MATLAB coding standards for improving code readability, maintainability, and collaboration. The guidelines encompass naming conventions, formatting, commenting, performance optimization, and error handling.
-- guidelines://plain-text-live-code. Provides rules and guidelines for generating MATLAB Live Scripts using using plain text Live Code .m format, suitable for version control and AI-assisted development. Requires MATLAB R2025a or newer.
+- guidelines://plain-text-live-code. Provides rules and guidelines for generating MATLAB Live Scripts using plain text Live Code .m format, suitable for version control and AI-assisted development. Requires MATLAB R2025a or newer.
 
 Best practices and safety:
 
