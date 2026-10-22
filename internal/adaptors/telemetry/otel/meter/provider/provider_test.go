@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
+const requiredShutdownTimeout = 3 * time.Second
+
 func TestNewFactory_HappyPath(t *testing.T) {
 	// Arrange
 	mockLoggerFactory := &providermocks.MockLoggerFactory{}
@@ -198,7 +200,7 @@ func TestFactory_New_ShutdownPassesContextWithDeadline(t *testing.T) {
 	require.NotNil(t, shutdownCtx, "exporter should have been called during shutdown")
 	deadline, hasDeadline := shutdownCtx.Deadline()
 	require.True(t, hasDeadline)
-	assert.WithinRange(t, deadline, before.Add(provider.ShutdownTimeout), after.Add(provider.ShutdownTimeout))
+	assert.WithinRange(t, deadline, before.Add(requiredShutdownTimeout), after.Add(requiredShutdownTimeout))
 }
 
 func TestFactory_New_ShutdownErrorReachesTheErrorHandler(t *testing.T) {

@@ -165,7 +165,7 @@ func (s *TelemetryTestSuite) TestTelemetry_BakedEndpointExportsWithoutBeingConfi
 
 	// OTLP environment variables would override the baked default.
 	cmd := exec.Command(serverPath, "--version") //nolint:gosec // Trusted test path
-	cmd.Env = environmentWithoutOTLPEndpoints()
+	cmd.Env = s.environmentWithoutTelemetryEndpoints()
 	_, err := cmd.CombinedOutput()
 	s.Require().NoError(err, "version flag should execute successfully")
 
@@ -239,16 +239,14 @@ func (s *TelemetryTestSuite) bakeServerBinary(endpoint string) string {
 	return binaryPath
 }
 
-func environmentWithoutOTLPEndpoints() []string {
-	environment := []string{}
-	for _, entry := range os.Environ() {
+func (*TelemetryTestSuite) environmentWithoutTelemetryEndpoints() []string {
+	return slices.DeleteFunc(os.Environ(), func(entry string) bool {
 		name, _, _ := strings.Cut(entry, "=")
-		if name == "OTEL_EXPORTER_OTLP_ENDPOINT" || name == "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT" {
-			continue
-		}
-		environment = append(environment, entry)
-	}
-	return environment
+		upperName := strings.ToUpper(name)
+
+		return strings.HasPrefix(upperName, "MW_MCP_SERVER_") ||
+			strings.HasPrefix(upperName, "OTEL_EXPORTER_OTLP_")
+	})
 }
 
 func TestTelemetrySuite(t *testing.T) {

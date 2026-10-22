@@ -41,78 +41,49 @@ func TestGenerate_EmptyEndpointReturnsError(t *testing.T) {
 	err := telemetryendpoint.Generate(outputPath, "")
 
 	// Assert
-	require.Error(t, err)
+	require.ErrorIs(t, err, telemetryendpoint.ErrEmptyEndpoint)
 	assert.NoFileExists(t, outputPath)
 }
 
-func TestGenerate_EndpointWithoutSchemeReturnsError(t *testing.T) {
+func TestGenerate_InvalidEndpointIsNotDisclosed(t *testing.T) {
 	// Arrange
-	outputPath := filepath.Join(t.TempDir(), "endpoint_generated.go")
+	testCases := []struct {
+		name          string
+		endpoint      string
+		expectedError error
+	}{
+		{
+			name:          "missing scheme",
+			endpoint:      "sensitive-collector.invalid/v1/metrics",
+			expectedError: telemetryendpoint.ErrUnsupportedScheme,
+		},
+		{
+			name:          "unsupported scheme",
+			endpoint:      "ftp://sensitive-collector.invalid/v1/metrics",
+			expectedError: telemetryendpoint.ErrUnsupportedScheme,
+		},
+		{
+			name:          "missing host",
+			endpoint:      "https:///v1/metrics",
+			expectedError: telemetryendpoint.ErrMissingHost,
+		},
+		{
+			name:          "malformed",
+			endpoint:      "https://sensitive-collector.invalid/v1/%zz",
+			expectedError: telemetryendpoint.ErrInvalidEndpoint,
+		},
+	}
 
-	// Act
-	err := telemetryendpoint.Generate(outputPath, "telemetry.example.test/v1/metrics")
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			outputPath := filepath.Join(t.TempDir(), "endpoint_generated.go")
 
-	// Assert
-	require.Error(t, err)
-	assert.NoFileExists(t, outputPath)
-}
+			// Act
+			err := telemetryendpoint.Generate(outputPath, testCase.endpoint)
 
-func TestGenerate_NonHTTPSchemeReturnsError(t *testing.T) {
-	// Arrange
-	outputPath := filepath.Join(t.TempDir(), "endpoint_generated.go")
-
-	// Act
-	err := telemetryendpoint.Generate(outputPath, "ftp://telemetry.example.test/v1/metrics")
-
-	// Assert
-	require.Error(t, err)
-	assert.NoFileExists(t, outputPath)
-}
-
-func TestVerify_HappyPath(t *testing.T) {
-	// Arrange
-	const endpoint = "https://telemetry.example.test/v1/metrics"
-	binaryPath := filepath.Join(t.TempDir(), "matlab-mcp-server")
-	require.NoError(t, os.WriteFile(binaryPath, []byte("padding "+endpoint+" padding"), 0o600))
-
-	// Act
-	err := telemetryendpoint.Verify(binaryPath, endpoint)
-
-	// Assert
-	require.NoError(t, err)
-}
-
-func TestVerify_BinaryWithoutEndpointReturnsError(t *testing.T) {
-	// Arrange
-	binaryPath := filepath.Join(t.TempDir(), "matlab-mcp-server")
-	require.NoError(t, os.WriteFile(binaryPath, []byte("padding"), 0o600))
-
-	// Act
-	err := telemetryendpoint.Verify(binaryPath, "https://telemetry.example.test/v1/metrics")
-
-	// Assert
-	require.Error(t, err)
-}
-
-func TestVerify_EmptyEndpointReturnsErrorInsteadOfMatchingAnyBinary(t *testing.T) {
-	// Arrange
-	binaryPath := filepath.Join(t.TempDir(), "matlab-mcp-server")
-	require.NoError(t, os.WriteFile(binaryPath, []byte("padding"), 0o600))
-
-	// Act
-	err := telemetryendpoint.Verify(binaryPath, "")
-
-	// Assert
-	require.Error(t, err)
-}
-
-func TestVerify_MissingBinaryReturnsError(t *testing.T) {
-	// Arrange
-	binaryPath := filepath.Join(t.TempDir(), "matlab-mcp-server")
-
-	// Act
-	err := telemetryendpoint.Verify(binaryPath, "https://telemetry.example.test/v1/metrics")
-
-	// Assert
-	require.Error(t, err)
+			// Assert
+			require.ErrorIs(t, err, testCase.expectedError)
+			assert.NotContains(t, err.Error(), testCase.endpoint)
+		})
+	}
 }

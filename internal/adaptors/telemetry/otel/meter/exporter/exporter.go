@@ -66,15 +66,15 @@ func (f *Factory) New() (otel.MetricExporter, messages.Error) {
 	if !env1Exists && !env2Exists {
 		endpoint := cfg.TelemetryCollectorEndpoint()
 		logger.Debug("Using configured OTLP HTTP endpoint")
-		options = append(options, otlpmetrichttp.WithEndpointURL(endpoint))
 
-		// otlpmetrichttp v1.46.0 stopped appending the metrics signal path to a
-		// path-less endpoint URL, normalizing it to "/" instead. WithURLPath only
-		// takes precedence when it follows WithEndpointURL.
 		parsedEndpoint, parseErr := url.Parse(endpoint)
 		if parseErr != nil {
-			logger.WithError(parseErr).Warn("Could not determine the OTLP HTTP signal path")
-		} else if parsedEndpoint.Path == "" || parsedEndpoint.Path == "/" {
+			logger.Error("Failed to create OTLP HTTP metric exporter")
+			return nil, messages.New_StartupErrors_TelemetryInitializationFailed_Error()
+		}
+
+		options = append(options, otlpmetrichttp.WithEndpointURL(endpoint))
+		if parsedEndpoint.Path == "" || parsedEndpoint.Path == "/" {
 			options = append(options, otlpmetrichttp.WithURLPath(defaultMetricsSignalPath))
 		}
 	}
@@ -89,7 +89,7 @@ func (f *Factory) New() (otel.MetricExporter, messages.Error) {
 		options...,
 	)
 	if err != nil {
-		logger.WithError(err).Error("Failed to create OTLP HTTP metric exporter")
+		logger.Error("Failed to create OTLP HTTP metric exporter")
 		return nil, messages.New_StartupErrors_TelemetryInitializationFailed_Error()
 	}
 

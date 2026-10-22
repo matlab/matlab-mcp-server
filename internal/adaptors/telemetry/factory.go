@@ -162,9 +162,6 @@ func (f *Factory) newOTELTelemetry() (Telemetry, messages.Error) {
 		return nil, err
 	}
 
-	errorHandler := otel.NewErrorHandler(logger)
-	otel.SetErrorHandler(errorHandler)
-
 	logger.Debug("Initializing telemetry")
 	defer logger.Debug("Done initializing telemetry")
 
@@ -178,13 +175,17 @@ func (f *Factory) newOTELTelemetry() (Telemetry, messages.Error) {
 		return nil, err
 	}
 
+	endpoint := cfg.TelemetryCollectorEndpoint()
+	errorHandler := otel.NewErrorHandler(logger, endpoint)
+	otel.SetErrorHandler(errorHandler)
+
 	var meterProvider metric.MeterProvider
 
 	switch {
 	case cfg.DisableTelemetry():
 		logger.Info("Telemetry disabled by configuration")
 		meterProvider = noop.NewMeterProvider()
-	case cfg.TelemetryCollectorEndpoint() == "":
+	case endpoint == "":
 		logger.Info("Telemetry off: no collector endpoint set")
 		meterProvider = noop.NewMeterProvider()
 	default:

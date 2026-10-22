@@ -157,10 +157,8 @@ endif
 # Gating on RELEASE, not on the value, stops a developer's environment or .env baking in.
 ifeq ($(RELEASE),true)
 	TAGS_ARG := -tags release
-	VERIFY_ENDPOINT = go run ./cmd/verify-telemetry-endpoint "$(1)"
 else
 	TAGS_ARG :=
-	VERIFY_ENDPOINT =
 endif
 
 # The export lets a "make VAR=value" assignment reach go run's environment.
@@ -298,7 +296,6 @@ ifeq ($(OS),Windows_NT)
 else
 	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) $(TAGS_ARG) -o "$(WIN64_BIN_DIR)/matlab-mcp-server.exe" ./cmd/matlab-mcp-server
 endif
-	$(call VERIFY_ENDPOINT,$(WIN64_BIN_DIR)/matlab-mcp-server.exe)
 
 build-for-glnxa64: generate-telemetry-endpoint
 ifeq ($(OS),Windows_NT)
@@ -306,7 +303,6 @@ ifeq ($(OS),Windows_NT)
 else
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) $(TAGS_ARG) -o "$(GLNXA64_BIN_DIR)/matlab-mcp-server" ./cmd/matlab-mcp-server
 endif
-	$(call VERIFY_ENDPOINT,$(GLNXA64_BIN_DIR)/matlab-mcp-server)
 
 build-for-maci64: generate-telemetry-endpoint
 ifeq ($(OS),Windows_NT)
@@ -314,7 +310,6 @@ ifeq ($(OS),Windows_NT)
 else
 	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) $(TAGS_ARG) -o "$(MACI64_BIN_DIR)/matlab-mcp-server" ./cmd/matlab-mcp-server
 endif
-	$(call VERIFY_ENDPOINT,$(MACI64_BIN_DIR)/matlab-mcp-server)
 
 build-for-maca64: generate-telemetry-endpoint
 ifeq ($(OS),Windows_NT)
@@ -322,7 +317,6 @@ ifeq ($(OS),Windows_NT)
 else
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) $(TAGS_ARG) -o "$(MACA64_BIN_DIR)/matlab-mcp-server" ./cmd/matlab-mcp-server
 endif
-	$(call VERIFY_ENDPOINT,$(MACA64_BIN_DIR)/matlab-mcp-server)
 
 build-all:
 	@$(call MK_DIR,$(ALL_BIN_DIR))

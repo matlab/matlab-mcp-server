@@ -5,6 +5,7 @@ package otel_test
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/internal/adaptors/telemetry/otel"
@@ -19,7 +20,7 @@ func TestErrorHandler_Handle_HappyPath(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
-	handler := otel.NewErrorHandler(mockLogger)
+	handler := otel.NewErrorHandler(mockLogger, "https://sensitive-collector.invalid/v1/metrics")
 
 	// Act
 	handler.Handle(assert.AnError)
@@ -35,49 +36,104 @@ func TestErrorHandler_Handle_HappyPath(t *testing.T) {
 	debugLogs := mockLogger.DebugLogs()
 	require.Len(t, debugLogs, 1)
 	for _, fields := range debugLogs {
-		assert.Equal(t, assert.AnError, fields["error"])
+		assert.EqualError(t, fields["error"].(error), assert.AnError.Error())
 	}
 }
 
-func TestErrorHandler_Handle_DoesNotLogEndpointInWarning(t *testing.T) {
+func TestErrorHandler_Handle_RedactsEndpoint(t *testing.T) {
+	const endpoint = "https://sensitive-collector.invalid/v1/metrics"
+	const host = "sensitive-collector.invalid"
+
+	testCases := []struct {
+		name      string
+		exportErr error
+	}{
+		{
+			name:      "endpoint URL",
+			exportErr: errors.New(`failed to upload metrics: Post "` + endpoint + `": request failed`),
+		},
+		{
+			name:      "endpoint host",
+			exportErr: errors.New(`dial tcp: lookup ` + host + `: no such host`),
+		},
+		{
+			name:      "endpoint host in other case",
+			exportErr: errors.New(`dial tcp: lookup SENSITIVE-COLLECTOR.INVALID: no such host`),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// Arrange
+			mockLogger := testutils.NewInspectableLogger()
+
+			handler := otel.NewErrorHandler(mockLogger, endpoint)
+
+			// Act
+			handler.Handle(testCase.exportErr)
+
+			// Assert
+			for _, logs := range []testutils.InspectableLogs{
+				mockLogger.DebugLogs(),
+				mockLogger.InfoLogs(),
+				mockLogger.WarnLogs(),
+				mockLogger.ErrorLogs(),
+			} {
+				requireLogsExcludeValue(t, logs, host)
+			}
+
+			debugLogs := mockLogger.DebugLogs()
+			require.Len(t, debugLogs, 1)
+			for _, fields := range debugLogs {
+				assert.Contains(t, fmt.Sprint(fields["error"]), otel.RedactedEndpoint)
+			}
+		})
+	}
+}
+
+func TestErrorHandler_Handle_NoEndpointLogsErrorUnchanged(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
-	handler := otel.NewErrorHandler(mockLogger)
-
-	const endpoint = "https://telemetry.example.invalid/v1/metrics"
-	exportErr := errors.New(`export failed: Post "` + endpoint + `": dial tcp: connection refused`)
+	handler := otel.NewErrorHandler(mockLogger, "")
 
 	// Act
-	handler.Handle(exportErr)
+	handler.Handle(assert.AnError)
 
 	// Assert
-	warnLogs := mockLogger.WarnLogs()
-	require.Len(t, warnLogs, 1)
-	for msg, fields := range warnLogs {
-		assert.NotContains(t, msg, endpoint)
-		for _, value := range fields {
-			assert.NotContains(t, fmt.Sprintf("%v", value), endpoint)
-		}
+	debugLogs := mockLogger.DebugLogs()
+	require.Len(t, debugLogs, 1)
+	for _, fields := range debugLogs {
+		assert.Equal(t, assert.AnError, fields["error"])
 	}
 }
 
 func TestErrorHandler_Handle_SurfacesWarningOnce(t *testing.T) {
 	// Arrange
 	mockLogger := &entitiesmocks.MockLogger{}
-	defer mockLogger.AssertExpectations(t)
 
-	firstErr := errors.New("first export failed")
-	secondErr := errors.New("second export failed")
-
-	mockLogger.EXPECT().Warn(mock.Anything).Once()
-	mockLogger.EXPECT().WithError(firstErr).Return(mockLogger).Once()
-	mockLogger.EXPECT().WithError(secondErr).Return(mockLogger).Once()
+	anyWarningMessage := mock.Anything
+	mockLogger.EXPECT().Warn(anyWarningMessage).Once()
+	mockLogger.EXPECT().WithError(mock.Anything).Return(mockLogger).Times(2)
 	mockLogger.EXPECT().Debug(mock.Anything).Times(2)
 
-	handler := otel.NewErrorHandler(mockLogger)
+	handler := otel.NewErrorHandler(mockLogger, "https://sensitive-collector.invalid/v1/metrics")
 
 	// Act
-	handler.Handle(firstErr)
-	handler.Handle(secondErr)
+	handler.Handle(assert.AnError)
+	handler.Handle(assert.AnError)
+
+	// Assert
+	mockLogger.AssertExpectations(t)
+}
+
+func requireLogsExcludeValue(t *testing.T, logs testutils.InspectableLogs, value string) {
+	t.Helper()
+
+	for message, fields := range logs {
+		assert.NotContains(t, strings.ToLower(message), strings.ToLower(value))
+		for _, field := range fields {
+			assert.NotContains(t, strings.ToLower(fmt.Sprint(field)), strings.ToLower(value))
+		}
+	}
 }

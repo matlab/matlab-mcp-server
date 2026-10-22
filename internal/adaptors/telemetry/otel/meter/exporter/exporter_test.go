@@ -3,6 +3,7 @@
 package exporter_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -90,6 +91,69 @@ func TestFactory_New_HappyPath(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, result)
+}
+
+func TestFactory_New_DoesNotLogInvalidEndpoint(t *testing.T) {
+	// Arrange
+	mockLoggerFactory := &exportermocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockConfigFactory := &exportermocks.MockConfigFactory{}
+	defer mockConfigFactory.AssertExpectations(t)
+
+	mockOSLayer := &exportermocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockConfig := &configmocks.MockConfig{}
+	defer mockConfig.AssertExpectations(t)
+
+	testLogger := testutils.NewInspectableLogger()
+	const endpoint = "https://sensitive-collector.invalid/v1/%zz"
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(testLogger, nil).
+		Once()
+
+	mockConfigFactory.EXPECT().
+		Config().
+		Return(mockConfig, nil).
+		Once()
+
+	mockOSLayer.EXPECT().
+		LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT").
+		Return("", false).
+		Once()
+
+	mockOSLayer.EXPECT().
+		LookupEnv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT").
+		Return("", false).
+		Once()
+
+	mockConfig.EXPECT().
+		TelemetryCollectorEndpoint().
+		Return(endpoint).
+		Once()
+
+	factory := exporter.NewFactory(mockLoggerFactory, mockConfigFactory, mockOSLayer)
+
+	// Act
+	_, _ = factory.New()
+
+	// Assert
+	for _, logs := range []testutils.InspectableLogs{
+		testLogger.DebugLogs(),
+		testLogger.InfoLogs(),
+		testLogger.WarnLogs(),
+		testLogger.ErrorLogs(),
+	} {
+		for message, fields := range logs {
+			assert.NotContains(t, message, endpoint)
+			for _, field := range fields {
+				assert.NotContains(t, fmt.Sprint(field), endpoint)
+			}
+		}
+	}
 }
 
 func TestFactory_New_LoggerError(t *testing.T) {

@@ -438,6 +438,11 @@ func TestFactory_Telemetry_TelemetryDisabled(t *testing.T) {
 		Once()
 
 	mockConfig.EXPECT().
+		TelemetryCollectorEndpoint().
+		Return("localhost:4317").
+		Once()
+
+	mockConfig.EXPECT().
 		DisableTelemetry().
 		Return(true).
 		Once()
