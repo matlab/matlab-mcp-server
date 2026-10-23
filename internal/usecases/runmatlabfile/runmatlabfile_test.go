@@ -3,9 +3,7 @@
 package runmatlabfile_test
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-server/internal/entities"
@@ -62,8 +60,10 @@ func TestUsecase_Execute_HappyPath(t *testing.T) {
 
 			usecaseRequest := runmatlabfile.Args{ScriptPath: scriptPath}
 
-			expectedCdRequest := entities.EvalRequest{
-				Code: fmt.Sprintf("cd('%s')", scriptDir),
+			expectedCdRequest := entities.FEvalRequest{
+				Function:   "cd",
+				Arguments:  []string{scriptDir},
+				NumOutputs: 0,
 			}
 
 			expectedEvalRequest := entities.EvalRequest{
@@ -81,8 +81,8 @@ func TestUsecase_Execute_HappyPath(t *testing.T) {
 				Once()
 
 			mockClient.EXPECT().
-				Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-				Return(entities.EvalResponse{}, nil).
+				FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+				Return(entities.FEvalResponse{}, nil).
 				Once()
 
 			mockClient.EXPECT().
@@ -102,7 +102,7 @@ func TestUsecase_Execute_HappyPath(t *testing.T) {
 	}
 }
 
-func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
+func TestUsecase_Execute_SingleQuoteInPath_PassesPathUnchanged(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
@@ -119,9 +119,10 @@ func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
 
 	usecaseRequest := runmatlabfile.Args{ScriptPath: scriptPath}
 
-	expectedEscapedDir := strings.ReplaceAll(scriptDir, "'", "''")
-	expectedCdRequest := entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", expectedEscapedDir),
+	expectedCdRequest := entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	}
 
 	expectedEvalRequest := entities.EvalRequest{
@@ -139,8 +140,8 @@ func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-		Return(entities.EvalResponse{}, nil).
+		FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -249,7 +250,7 @@ func TestUsecase_Execute_ValidateMATLABCodeFileError(t *testing.T) {
 	assert.Empty(t, response, "Response should be empty")
 }
 
-func TestUsecase_Execute_CdEvalError(t *testing.T) {
+func TestUsecase_Execute_CdFEvalError(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
@@ -267,8 +268,10 @@ func TestUsecase_Execute_CdEvalError(t *testing.T) {
 
 	usecaseRequest := runmatlabfile.Args{ScriptPath: scriptPath}
 
-	expectedCdRequest := entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", scriptDir),
+	expectedCdRequest := entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	}
 
 	mockPathValidator.EXPECT().
@@ -277,8 +280,8 @@ func TestUsecase_Execute_CdEvalError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-		Return(entities.EvalResponse{}, expectedError).
+		FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+		Return(entities.FEvalResponse{}, expectedError).
 		Once()
 
 	usecase := runmatlabfile.New(mockPathValidator)
@@ -309,8 +312,10 @@ func TestUsecase_Execute_RunMATLABFileEvalError(t *testing.T) {
 
 	usecaseRequest := runmatlabfile.Args{ScriptPath: scriptPath}
 
-	expectedCdRequest := entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", scriptDir),
+	expectedCdRequest := entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	}
 
 	expectedEvalRequest := entities.EvalRequest{
@@ -323,8 +328,8 @@ func TestUsecase_Execute_RunMATLABFileEvalError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-		Return(entities.EvalResponse{}, nil).
+		FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -363,8 +368,10 @@ func TestUsecase_Execute_CaptureOutput_HappyPath(t *testing.T) {
 		CaptureOutput: captureOutput,
 	}
 
-	expectedCdRequest := entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", scriptDir),
+	expectedCdRequest := entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	}
 
 	expectedEvalRequest := entities.EvalRequest{
@@ -382,8 +389,8 @@ func TestUsecase_Execute_CaptureOutput_HappyPath(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-		Return(entities.EvalResponse{}, nil).
+		FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -423,8 +430,10 @@ func TestUsecase_Execute_CaptureOutput_EvalWithCaptureError(t *testing.T) {
 		CaptureOutput: captureOutput,
 	}
 
-	expectedCdRequest := entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", scriptDir),
+	expectedCdRequest := entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	}
 
 	expectedEvalRequest := entities.EvalRequest{
@@ -437,8 +446,8 @@ func TestUsecase_Execute_CaptureOutput_EvalWithCaptureError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
-		Return(entities.EvalResponse{}, nil).
+		FEval(ctx, mockLogger.AsMockArg(), expectedCdRequest).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().

@@ -72,6 +72,21 @@ The suite sets `HOME`, `APPDATA` and `MATLAB_PREFDIR` to folders in a temporary 
 The server and the toolbox find the session details folder from `HOME`, or from `APPDATA` on Windows, so your shared MATLAB sessions do not change the result.
 With `MATLAB_PREFDIR` set, the toolbox install does not change your real MATLAB settings or add-ons.
 
+### Test Requirements
+
+Some tests need something that not every MATLAB has.
+Such a test checks the MATLAB under test and skips when the requirement is missing.
+To run the test anyway, set its variable to `1`.
+
+| Variable | Test | Skips when |
+|----------|------|------------|
+| `MCP_SYSTEM_TEST_FORCE_JVM` | `TestQuitDebuggerAfterJavaError` | `usejava("jvm")` is false. From R2026b, MATLAB does not include a JRE. |
+
+```bash
+export MCP_SYSTEM_TEST_FORCE_JVM=1
+go test -v ./tests/system/... -run TestDebugWorkflowSuite/TestQuitDebuggerAfterJavaError
+```
+
 ### Leaked MATLAB Check
 
 After the system tests, the Makefile looks for MATLAB processes that the tests did not stop.

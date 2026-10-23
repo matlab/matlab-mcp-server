@@ -74,19 +74,11 @@ func (c *Client) SetPingRetry(retry time.Duration) {
 }
 
 func (c *Client) Eval(ctx context.Context, logger entities.Logger, input entities.EvalRequest) (entities.EvalResponse, error) {
-	code := input.Code
-	if !input.HotLinks {
-		code = fmt.Sprintf("feature('HotLinks',0);%s", input.Code)
-	}
-	return c.sendEval(ctx, logger, code)
-}
-
-func (c *Client) sendEval(ctx context.Context, logger entities.Logger, code string) (entities.EvalResponse, error) {
 	payload := ConnectorPayload{
 		Messages: ConnectorMessage{
 			Eval: []EvalMessage{
 				{
-					Code: code,
+					Code: input.Code,
 				},
 			},
 		},

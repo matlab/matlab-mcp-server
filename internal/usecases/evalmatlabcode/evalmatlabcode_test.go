@@ -58,10 +58,12 @@ func TestUsecase_Execute_HappyPath(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + validatedProjectPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, nil).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -79,7 +81,7 @@ func TestUsecase_Execute_HappyPath(t *testing.T) {
 	assert.Equal(t, expectedResponse, response, "Response should match expected value")
 }
 
-func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
+func TestUsecase_Execute_SingleQuoteInPath_PassesPathUnchanged(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
@@ -92,7 +94,6 @@ func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
 	ctx := t.Context()
 	projectPath := filepath.Join("Users", "O'Brien", "project")
 	validatedProjectPath := projectPath
-	expectedEscapedPath := "Users" + string(filepath.Separator) + "O''Brien" + string(filepath.Separator) + "project"
 
 	evalRequest := evalmatlabcode.Args{
 		ProjectPath: projectPath,
@@ -109,10 +110,12 @@ func TestUsecase_Execute_EscapesSingleQuotesInPath(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + expectedEscapedPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, nil).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -201,7 +204,7 @@ func TestUsecase_Execute_ValidatePathError(t *testing.T) {
 	assert.Empty(t, response, "Response should be empty when there's an error")
 }
 
-func TestUsecase_Execute_CDEvalError(t *testing.T) {
+func TestUsecase_Execute_CDFEvalError(t *testing.T) {
 	// Arrange
 	mockLogger := testutils.NewInspectableLogger()
 
@@ -229,10 +232,12 @@ func TestUsecase_Execute_CDEvalError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + validatedProjectPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, expectedError).
+		Return(entities.FEvalResponse{}, expectedError).
 		Once()
 
 	usecase := evalmatlabcode.New(mockPathValidator)
@@ -273,10 +278,12 @@ func TestUsecase_Execute_EvalError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + validatedProjectPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, nil).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -326,10 +333,12 @@ func TestUsecase_Execute_CaptureOutput_HappyPath(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + validatedProjectPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, nil).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().
@@ -375,10 +384,12 @@ func TestUsecase_Execute_CaptureOutput_EvalWithCaptureError(t *testing.T) {
 		Once()
 
 	mockClient.EXPECT().
-		Eval(ctx, mockLogger.AsMockArg(), entities.EvalRequest{
-			Code: "cd('" + validatedProjectPath + "')",
+		FEval(ctx, mockLogger.AsMockArg(), entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedProjectPath},
+			NumOutputs: 0,
 		}).
-		Return(entities.EvalResponse{}, nil).
+		Return(entities.FEvalResponse{}, nil).
 		Once()
 
 	mockClient.EXPECT().

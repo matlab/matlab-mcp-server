@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/matlab/matlab-mcp-server/internal/entities"
-	"github.com/matlab/matlab-mcp-server/internal/usecases/utils/matlabstring"
 )
 
 type Args struct {
@@ -43,10 +42,12 @@ func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, cl
 			return entities.EvalResponse{}, fmt.Errorf("path validation failed: %w", err)
 		}
 
-		cdRequest := entities.EvalRequest{
-			Code: fmt.Sprintf("cd('%s')", matlabstring.EscapeSingleQuotes(validatedPath)),
+		cdRequest := entities.FEvalRequest{
+			Function:   "cd",
+			Arguments:  []string{validatedPath},
+			NumOutputs: 0,
 		}
-		_, err = client.Eval(ctx, sessionLogger, cdRequest)
+		_, err = client.FEval(ctx, sessionLogger, cdRequest)
 		if err != nil {
 			return entities.EvalResponse{}, err
 		}

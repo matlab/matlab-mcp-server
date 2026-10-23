@@ -44,8 +44,7 @@ type AttachToExistingSession struct{}
 func (a AttachToExistingSession) interfacelock() {}
 
 type EvalRequest struct {
-	Code     string
-	HotLinks bool
+	Code string
 }
 
 type EvalResponse struct {

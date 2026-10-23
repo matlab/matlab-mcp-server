@@ -47,55 +47,13 @@ func TestClient_Eval_HappyPath(t *testing.T) {
 
 	// Act
 	response, err := client.Eval(t.Context(), logger, entities.EvalRequest{
-		Code:     expectedCode,
-		HotLinks: true,
+		Code: expectedCode,
 	})
 
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, expectedOutput, response.ConsoleOutput)
 	assert.Nil(t, response.Images)
-}
-
-func TestClient_Eval_SuppressesHotLinksByDefault(t *testing.T) {
-	// Arrange
-	logger := testutils.NewInspectableLogger()
-
-	const userCode = "disp('Hello World')"
-	const expectedCode = "feature('HotLinks',0);" + userCode
-	const expectedOutput = "mock echo: " + userCode
-
-	server := mockembeddedconnector.New(t,
-		func(response http.ResponseWriter, request *http.Request) {
-			req := mockembeddedconnector.ReadConnectorRequest(t, request)
-			assert.Len(t, req.Messages.Eval, 1)
-			assert.Equal(t, expectedCode, req.Messages.Eval[0].Code)
-
-			mockembeddedconnector.RespondWithJSON(t, response, embeddedconnector.ConnectorPayload{
-				Messages: embeddedconnector.ConnectorMessage{
-					EvalResponse: []embeddedconnector.EvalResponseMessage{
-						{
-							IsError:     false,
-							ResponseStr: expectedOutput,
-						},
-					},
-				},
-			})
-		},
-		nil,
-	)
-	defer server.Stop()
-
-	client := newClient(t, server.ConnectionDetails())
-
-	// Act
-	response, err := client.Eval(t.Context(), logger, entities.EvalRequest{
-		Code: userCode,
-	})
-
-	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, expectedOutput, response.ConsoleOutput)
 }
 
 func TestClient_FEval_HappyPath(t *testing.T) {

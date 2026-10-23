@@ -19,8 +19,6 @@ func TestShouldExitFromEvalCode(t *testing.T) {
 		{name: "exit function", code: "exit()", want: true},
 		{name: "quit command", code: "quit", want: true},
 		{name: "quit function", code: "quit()", want: true},
-		{name: "exit with HotLinks prefix", code: "feature('HotLinks',0);exit()", want: true},
-		{name: "quit with HotLinks prefix", code: "feature('HotLinks',0);quit", want: true},
 		{name: "non-exit code", code: "disp('hello')", want: false},
 	}
 

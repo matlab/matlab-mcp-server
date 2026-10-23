@@ -63,8 +63,7 @@ func TestClient_Eval_HappyPath(t *testing.T) {
 
 	// Act
 	response, err := client.Eval(t.Context(), mockLogger, entities.EvalRequest{
-		Code:     expectedCode,
-		HotLinks: true,
+		Code: expectedCode,
 	})
 
 	// Assert
@@ -235,112 +234,6 @@ func TestClient_Eval_DoErrors(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	assert.Empty(t, response)
-}
-
-func TestClient_Eval_HotLinksDisabled_PrefixesCode(t *testing.T) {
-	// Arrange
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockHttpClient := &httpclientmocks.MockHttpClient{}
-	defer mockHttpClient.AssertExpectations(t)
-
-	userCode := "help sin"
-	expectedCode := "feature('HotLinks',0);" + userCode
-	expectedOutput := "sin - Sine of argument in radians"
-
-	responsePayload := embeddedconnector.ConnectorPayload{
-		Messages: embeddedconnector.ConnectorMessage{
-			EvalResponse: []embeddedconnector.EvalResponseMessage{
-				{
-					IsError:     false,
-					ResponseStr: expectedOutput,
-				},
-			},
-		},
-	}
-	responseBody, _ := json.Marshal(responsePayload)
-
-	mockHttpClient.EXPECT().
-		Do(mock.MatchedBy(func(req *http.Request) bool {
-			payload, ok := parseConnectorRequest(req)
-			if !ok {
-				return false
-			}
-			if len(payload.Messages.Eval) != 1 {
-				return false
-			}
-			return payload.Messages.Eval[0].Code == expectedCode
-		})).
-		Return(&http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewReader(responseBody)),
-		}, nil).
-		Once()
-
-	client := embeddedconnector.Client{}
-	client.SetHttpClient(mockHttpClient)
-
-	// Act
-	response, err := client.Eval(t.Context(), mockLogger, entities.EvalRequest{
-		Code: userCode,
-	})
-
-	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, expectedOutput, response.ConsoleOutput)
-}
-
-func TestClient_Eval_HotLinksEnabled_NoPrefix(t *testing.T) {
-	// Arrange
-	mockLogger := testutils.NewInspectableLogger()
-
-	mockHttpClient := &httpclientmocks.MockHttpClient{}
-	defer mockHttpClient.AssertExpectations(t)
-
-	userCode := "help sin"
-	expectedOutput := "sin - Sine of argument in radians"
-
-	responsePayload := embeddedconnector.ConnectorPayload{
-		Messages: embeddedconnector.ConnectorMessage{
-			EvalResponse: []embeddedconnector.EvalResponseMessage{
-				{
-					IsError:     false,
-					ResponseStr: expectedOutput,
-				},
-			},
-		},
-	}
-	responseBody, _ := json.Marshal(responsePayload)
-
-	mockHttpClient.EXPECT().
-		Do(mock.MatchedBy(func(req *http.Request) bool {
-			payload, ok := parseConnectorRequest(req)
-			if !ok {
-				return false
-			}
-			if len(payload.Messages.Eval) != 1 {
-				return false
-			}
-			return payload.Messages.Eval[0].Code == userCode
-		})).
-		Return(&http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewReader(responseBody)),
-		}, nil).
-		Once()
-
-	client := embeddedconnector.Client{}
-	client.SetHttpClient(mockHttpClient)
-
-	// Act
-	response, err := client.Eval(t.Context(), mockLogger, entities.EvalRequest{
-		HotLinks: true,
-		Code:     userCode,
-	})
-
-	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, expectedOutput, response.ConsoleOutput)
 }
 
 func TestClient_Eval_ReturnsPromptType(t *testing.T) {

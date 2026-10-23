@@ -9,7 +9,6 @@ import (
 	"regexp"
 
 	"github.com/matlab/matlab-mcp-server/internal/entities"
-	"github.com/matlab/matlab-mcp-server/internal/usecases/utils/matlabstring"
 	"github.com/matlab/matlab-mcp-server/internal/usecases/utils/pathextractor"
 )
 
@@ -53,8 +52,10 @@ func (u *Usecase) Execute(ctx context.Context, sessionLogger entities.Logger, cl
 		return entities.EvalResponse{}, fmt.Errorf("invalid MATLAB file name %q: a MATLAB script file name must start with a letter and contain only letters, digits, and underscores", filepath.Base(validatedPath))
 	}
 
-	_, err = client.Eval(ctx, sessionLogger, entities.EvalRequest{
-		Code: fmt.Sprintf("cd('%s')", matlabstring.EscapeSingleQuotes(scriptDir)),
+	_, err = client.FEval(ctx, sessionLogger, entities.FEvalRequest{
+		Function:   "cd",
+		Arguments:  []string{scriptDir},
+		NumOutputs: 0,
 	})
 	if err != nil {
 		return entities.EvalResponse{}, err
