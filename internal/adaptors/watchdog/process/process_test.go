@@ -38,6 +38,7 @@ func TestNewProcess_HappyPath(t *testing.T) {
 	expectedBaseDir := filepath.Join("tmp", "base", "dir")
 	expectedServerID := "server-id"
 	expectedLogLevel := entities.LogLevelInfo
+	expectedDisableTelemetry := true
 
 	mockDirectory.EXPECT().
 		BaseDir().
@@ -54,6 +55,11 @@ func TestNewProcess_HappyPath(t *testing.T) {
 		Return(expectedLogLevel).
 		Once()
 
+	mockConfig.EXPECT().
+		DisableTelemetry().
+		Return(expectedDisableTelemetry).
+		Once()
+
 	mockOSLayer.EXPECT().
 		Executable().
 		Return(expectedProgramPath, nil).
@@ -65,6 +71,7 @@ func TestNewProcess_HappyPath(t *testing.T) {
 			"--" + defaultparameters.BaseDir().GetFlagName(), expectedBaseDir,
 			"--" + defaultparameters.ServerInstanceID().GetFlagName(), expectedServerID,
 			"--" + defaultparameters.LogLevel().GetFlagName(), string(expectedLogLevel),
+			"--" + defaultparameters.DisableTelemetry().GetFlagName() + "=true",
 		}).
 		Return(mockCmd).
 		Once()
@@ -132,6 +139,7 @@ func TestNewProcess_CommandStartError(t *testing.T) {
 	expectedBaseDir := filepath.Join("tmp", "base", "dir")
 	expectedServerID := "server-id"
 	expectedLogLevel := entities.LogLevelInfo
+	expectedDisableTelemetry := true
 	expectedError := messages.New_StartupErrors_FailedToStartWatchdogProcess_Error()
 
 	mockDirectory.EXPECT().
@@ -149,6 +157,11 @@ func TestNewProcess_CommandStartError(t *testing.T) {
 		Return(expectedLogLevel).
 		Once()
 
+	mockConfig.EXPECT().
+		DisableTelemetry().
+		Return(expectedDisableTelemetry).
+		Once()
+
 	mockOSLayer.EXPECT().
 		Executable().
 		Return(expectedProgramPath, nil).
@@ -160,6 +173,7 @@ func TestNewProcess_CommandStartError(t *testing.T) {
 			"--" + defaultparameters.BaseDir().GetFlagName(), expectedBaseDir,
 			"--" + defaultparameters.ServerInstanceID().GetFlagName(), expectedServerID,
 			"--" + defaultparameters.LogLevel().GetFlagName(), string(expectedLogLevel),
+			"--" + defaultparameters.DisableTelemetry().GetFlagName() + "=true",
 		}).
 		Return(mockCmd).
 		Once()
