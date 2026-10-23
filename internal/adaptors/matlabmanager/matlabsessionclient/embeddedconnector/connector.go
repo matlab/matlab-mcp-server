@@ -64,11 +64,14 @@ type LiveEditorResponseEntry struct {
 		Text string `json:"text"`
 		Name string `json:"name"`
 	} `json:"content"`
+	IsError    bool   `json:"isError"`
+	Identifier string `json:"identifier"`
 }
 
 type responseProcessor struct {
 	consoleOutput        []string
 	images               [][]byte
+	exceptions           []matlabException
 	pendingStreamName    string
 	pendingStreamContent string
 }
@@ -82,6 +85,14 @@ func (p *responseProcessor) processEntry(entry LiveEditorResponseEntry) error {
 			return err
 		}
 	case "stream":
+		if entry.IsError {
+			p.flushPendingStream()
+			p.exceptions = append(p.exceptions, matlabException{
+				Identifier: entry.Identifier,
+				Message:    entry.Content.Text,
+			})
+			return nil
+		}
 		p.processStream(entry)
 	}
 	return nil
@@ -160,8 +171,16 @@ func parseEvalWithCaptureResponse(response entities.FEvalResponse) (entities.Eva
 
 	processor.flushPendingStream()
 
+	consoleOutput := strings.Join(processor.consoleOutput, "\n")
+	if len(processor.exceptions) > 0 {
+		return entities.EvalResponse{}, matlabExceptionsError{
+			ConsoleOutput: consoleOutput,
+			Exceptions:    processor.exceptions,
+		}
+	}
+
 	return entities.EvalResponse{
-		ConsoleOutput: strings.Join(processor.consoleOutput, "\n"),
+		ConsoleOutput: consoleOutput,
 		Images:        processor.images,
 	}, nil
 }

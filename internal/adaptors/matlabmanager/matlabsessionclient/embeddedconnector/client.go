@@ -95,9 +95,16 @@ func (c *Client) Eval(ctx context.Context, logger entities.Logger, input entitie
 	}
 
 	if response.Messages.EvalResponse[0].IsError {
+		matlabErr := matlabExceptionsError{
+			Exceptions: []matlabException{
+				{
+					Message: response.Messages.EvalResponse[0].ResponseStr,
+				},
+			},
+		}
 		return entities.EvalResponse{
 			PromptType: response.Messages.EvalResponse[0].PromptType,
-		}, newMATLABError(response.Messages.EvalResponse[0].ResponseStr)
+		}, matlabErr
 	}
 
 	return entities.EvalResponse{

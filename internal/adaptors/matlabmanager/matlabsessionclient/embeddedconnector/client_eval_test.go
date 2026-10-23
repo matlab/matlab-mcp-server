@@ -109,6 +109,13 @@ func TestClient_Eval_MATLABError(t *testing.T) {
 
 	expectedCode := "invalid_function()"
 	expectedErrorMessage := "Undefined function 'invalid_function'"
+	expectedError := embeddedconnector.MATLABExceptionsError{
+		Exceptions: []embeddedconnector.MATLABException{
+			{
+				Message: expectedErrorMessage,
+			},
+		},
+	}
 
 	responsePayload := embeddedconnector.ConnectorPayload{
 		Messages: embeddedconnector.ConnectorMessage{
@@ -141,8 +148,9 @@ func TestClient_Eval_MATLABError(t *testing.T) {
 	response, err := client.Eval(t.Context(), mockLogger, evalRequest)
 
 	// Assert
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), expectedErrorMessage)
+	var matlabError embeddedconnector.MATLABExceptionsError
+	require.ErrorAs(t, err, &matlabError)
+	require.Equal(t, expectedError, matlabError)
 	assert.Empty(t, response.ConsoleOutput)
 	assert.Nil(t, response.Images)
 }

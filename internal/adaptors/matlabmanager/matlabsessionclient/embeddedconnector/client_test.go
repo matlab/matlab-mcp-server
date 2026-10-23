@@ -17,12 +17,16 @@ func buildEvalWithCaptureResponse(t *testing.T, entries []embeddedconnector.Live
 	data, err := json.Marshal(entries)
 	require.NoError(t, err, "Failed to marshal entries to JSON")
 
+	return buildEvalWithCaptureResponseFromJSON(t, string(data))
+}
+
+func buildEvalWithCaptureResponseFromJSON(t *testing.T, entries string) []byte {
 	responsePayload := embeddedconnector.ConnectorPayload{
 		Messages: embeddedconnector.ConnectorMessage{
 			FevalResponse: []embeddedconnector.FevalResponseMessage{
 				{
 					IsError: false,
-					Results: []interface{}{string(data)},
+					Results: []interface{}{entries},
 				},
 			},
 		},

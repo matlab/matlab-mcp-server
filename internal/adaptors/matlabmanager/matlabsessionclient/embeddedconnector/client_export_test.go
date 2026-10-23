@@ -6,6 +6,10 @@ import (
 	httpclient "github.com/matlab/matlab-mcp-server/internal/adaptors/http/client"
 )
 
+type MATLABException = matlabException
+
+type MATLABExceptionsError = matlabExceptionsError
+
 func (c *Client) SetHttpClient(httpClient httpclient.HttpClient) {
 	c.httpClient = httpClient
 }

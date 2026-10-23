@@ -97,7 +97,7 @@ function packageTask(context, toolboxFolder, distFolder)
 
     % Stable UUID for the toolbox (do not change)
     toolboxName = "MATLAB MCP Server Toolbox";
-    toolboxVersion = "0.4.0";
+    toolboxVersion = "0.5.0";
     uuid = "fce99a56-1b63-4d49-9d70-c32c5605e4eb";
 
     % Create Contents.m

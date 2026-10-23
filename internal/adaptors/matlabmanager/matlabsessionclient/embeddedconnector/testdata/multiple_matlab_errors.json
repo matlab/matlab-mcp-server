@@ -1,0 +1,20 @@
+[
+    {
+        "type": "stream",
+        "content": {
+            "name": "stderr",
+            "text": "first failure"
+        },
+        "isError": true,
+        "identifier": "first:id"
+    },
+    {
+        "type": "stream",
+        "content": {
+            "name": "stderr",
+            "text": "second failure"
+        },
+        "isError": true,
+        "identifier": "second:id"
+    }
+]

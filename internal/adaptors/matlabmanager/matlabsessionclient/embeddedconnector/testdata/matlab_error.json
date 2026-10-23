@@ -1,0 +1,18 @@
+[
+    {
+        "type": "stream",
+        "content": {
+            "name": "stdout",
+            "text": "before\n"
+        }
+    },
+    {
+        "type": "stream",
+        "content": {
+            "name": "stderr",
+            "text": "Unrecognized function or variable 'undefinedFnXyz'."
+        },
+        "isError": true,
+        "identifier": "MATLAB:UndefinedFunction"
+    }
+]

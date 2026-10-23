@@ -101,7 +101,7 @@ function request = updateRequest(request, code)
 end
 
 function result = processOutputs(outputs)
-    result =cell(1,length(outputs));
+    result = cell(1,length(outputs));
     figureTrackingMap = containers.Map;
 
     % Post process each captured output based on its type.
@@ -118,7 +118,7 @@ function result = processOutputs(outputs)
             case 'symbolic'
                 result{ii} = processSymbolic(outputData);
             case 'error'
-                result{ii} = processStream('stderr', outputData.text);
+                result{ii} = processError(outputData.text, getErrorIdentifier(outputData));
             case 'warning'
                 result{ii} = processStream('stderr', outputData.text);
             case 'text'
@@ -152,7 +152,7 @@ function result = processOutputs(outputs)
 
     ME = matlab_mcp.getOrStashExceptions([], true);
     if ~isempty(ME)
-        result{end+1} = processStream('stderr', ME.message);
+        result{end+1} = processError(ME.message, ME.identifier);
     end
 
     % Helper functions to post process output of type 'matrix', 'variable' and
@@ -248,6 +248,20 @@ function result = processOutputs(outputs)
         result.type = 'stream';
         result.content.name = stream;
         result.content.text = text;
+    end
+
+    % Errors stay 'stderr' streams so servers that ignore isError still show them
+    function result = processError(text, identifier)
+        result = processStream('stderr', text);
+        result.isError = true;
+        result.identifier = identifier;
+    end
+
+    function identifier = getErrorIdentifier(output)
+        identifier = '';
+        if isfield(output, 'mException') && isfield(output.mException, 'identifier')
+            identifier = char(output.mException.identifier);
+        end
     end
 
     % Helper function for processing figure outputs.

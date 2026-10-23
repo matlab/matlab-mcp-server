@@ -1,0 +1,18 @@
+[
+    {
+        "type": "stream",
+        "content": {
+            "name": "stderr",
+            "text": "Warning: careful"
+        }
+    },
+    {
+        "type": "stream",
+        "content": {
+            "name": "stderr",
+            "text": "boom"
+        },
+        "isError": true,
+        "identifier": ""
+    }
+]

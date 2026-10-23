@@ -92,6 +92,11 @@ func (s *WorkflowTestSuite) TestInteractiveDevelopmentWorkflow() {
 			s.Contains(lines, "b=3", "variable 'b' should persist on its own line")
 			s.Contains(lines, "c=5", "should compute 2 + 3 = 5 on its own line")
 
+			// Step 3c: A coding mistake comes back as a tool error
+			_, err = session.EvaluateCode(ctx, "undefinedFnXyz()")
+			s.Require().Error(err, "a MATLAB error should be returned as an isError tool result")
+			s.Require().ErrorContains(err, "Unrecognized function or variable 'undefinedFnXyz'", "the tool error should carry the MATLAB error message")
+
 			// Step 4: Verify MATLAB started in the MCP root directory
 			// The server should have used the client's root as MATLAB's initial working folder.
 			output, err = session.EvaluateCode(ctx, "pwd")

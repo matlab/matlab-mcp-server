@@ -5,6 +5,7 @@ package embeddedconnector_test
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -19,6 +20,15 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+//go:embed testdata/matlab_error.json
+var matlabErrorJSON string
+
+//go:embed testdata/matlab_error_after_warning.json
+var matlabErrorAfterWarningJSON string
+
+//go:embed testdata/multiple_matlab_errors.json
+var multipleMATLABErrorsJSON string
 
 func TestClient_EvalWithCapture_HappyPath(t *testing.T) {
 	// Arrange
@@ -119,7 +129,11 @@ func TestClient_EvalWithCapture_ReturnStreams(t *testing.T) {
 	mockHttpClient := &httpclientmocks.MockHttpClient{}
 	defer mockHttpClient.AssertExpectations(t)
 
-	expectedOutput := "some error"
+	ctx := t.Context()
+	evalRequest := entities.EvalRequest{
+		Code: "warning('some warning')",
+	}
+	expectedOutput := "Warning: some warning"
 
 	entries := []embeddedconnector.LiveEditorResponseEntry{
 		{
@@ -147,7 +161,7 @@ func TestClient_EvalWithCapture_ReturnStreams(t *testing.T) {
 	client.SetHttpClient(mockHttpClient)
 
 	// Act
-	response, err := client.EvalWithCapture(t.Context(), mockLogger, entities.EvalRequest{Code: "undefined_function"})
+	response, err := client.EvalWithCapture(ctx, mockLogger, evalRequest)
 
 	// Assert
 	require.NoError(t, err)
@@ -395,6 +409,137 @@ func TestClient_EvalWithCapture_StreamsWithInterruptionByExecuteResult(t *testin
 	require.NoError(t, err)
 	assert.Equal(t, "Warning: first warning message\nx = 1\nWarning: second warning", response.ConsoleOutput)
 	assert.Nil(t, response.Images)
+}
+
+func TestClient_EvalWithCapture_MATLABError(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
+	defer mockHttpClient.AssertExpectations(t)
+
+	ctx := t.Context()
+	evalRequest := entities.EvalRequest{
+		Code: "disp('before'); undefinedFnXyz()",
+	}
+	expectedError := embeddedconnector.MATLABExceptionsError{
+		ConsoleOutput: "before\n",
+		Exceptions: []embeddedconnector.MATLABException{
+			{
+				Identifier: "MATLAB:UndefinedFunction",
+				Message:    "Unrecognized function or variable 'undefinedFnXyz'.",
+			},
+		},
+	}
+	responseBody := buildEvalWithCaptureResponseFromJSON(t, matlabErrorJSON)
+
+	mockHttpClient.EXPECT().
+		Do(mock.MatchedBy(validateConnectorRequest)).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil).
+		Once()
+
+	client := embeddedconnector.Client{}
+	client.SetHttpClient(mockHttpClient)
+
+	// Act
+	response, err := client.EvalWithCapture(ctx, mockLogger, evalRequest)
+
+	// Assert
+	var matlabError embeddedconnector.MATLABExceptionsError
+	require.ErrorAs(t, err, &matlabError)
+	require.Equal(t, expectedError, matlabError)
+	assert.Empty(t, response)
+}
+
+func TestClient_EvalWithCapture_MATLABError_AfterWarning(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
+	defer mockHttpClient.AssertExpectations(t)
+
+	ctx := t.Context()
+	evalRequest := entities.EvalRequest{
+		Code: "warning('careful'); error('boom')",
+	}
+	expectedError := embeddedconnector.MATLABExceptionsError{
+		ConsoleOutput: "Warning: careful",
+		Exceptions: []embeddedconnector.MATLABException{
+			{
+				Message: "boom",
+			},
+		},
+	}
+	responseBody := buildEvalWithCaptureResponseFromJSON(t, matlabErrorAfterWarningJSON)
+
+	mockHttpClient.EXPECT().
+		Do(mock.MatchedBy(validateConnectorRequest)).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil).
+		Once()
+
+	client := embeddedconnector.Client{}
+	client.SetHttpClient(mockHttpClient)
+
+	// Act
+	response, err := client.EvalWithCapture(ctx, mockLogger, evalRequest)
+
+	// Assert
+	var matlabError embeddedconnector.MATLABExceptionsError
+	require.ErrorAs(t, err, &matlabError)
+	require.Equal(t, expectedError, matlabError)
+	assert.Empty(t, response)
+}
+
+func TestClient_EvalWithCapture_MultipleMATLABErrors(t *testing.T) {
+	// Arrange
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockHttpClient := &httpclientmocks.MockHttpClient{}
+	defer mockHttpClient.AssertExpectations(t)
+
+	ctx := t.Context()
+	evalRequest := entities.EvalRequest{
+		Code: "runAll()",
+	}
+	expectedError := embeddedconnector.MATLABExceptionsError{
+		Exceptions: []embeddedconnector.MATLABException{
+			{
+				Identifier: "first:id",
+				Message:    "first failure",
+			},
+			{
+				Identifier: "second:id",
+				Message:    "second failure",
+			},
+		},
+	}
+	responseBody := buildEvalWithCaptureResponseFromJSON(t, multipleMATLABErrorsJSON)
+
+	mockHttpClient.EXPECT().
+		Do(mock.MatchedBy(validateConnectorRequest)).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil).
+		Once()
+
+	client := embeddedconnector.Client{}
+	client.SetHttpClient(mockHttpClient)
+
+	// Act
+	response, err := client.EvalWithCapture(ctx, mockLogger, evalRequest)
+
+	// Assert
+	var matlabError embeddedconnector.MATLABExceptionsError
+	require.ErrorAs(t, err, &matlabError)
+	require.Equal(t, expectedError, matlabError)
+	assert.Empty(t, response)
 }
 
 func TestClient_EvalWithCapture_DoErrors(t *testing.T) {
