@@ -2,7 +2,7 @@ module github.com/matlab/matlab-mcp-server/internal/tools
 
 // Copyright 2025-2026 The MathWorks, Inc.
 
-go 1.27.2
+go 1.27.3
 
 tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
