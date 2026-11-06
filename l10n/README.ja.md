@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: debacb748288e357e5ecb5f8ef4fb81b7240c138
+- Commit: 659e225db68cda8b143b9c8bcf4d2b1b38d4116d
 -->
 
 # MATLAB MCP Server
@@ -21,11 +21,13 @@ MathWorks® 公式の MATLAB MCP Server を使用して、AI アプリケーシ�
 - MATLAB コードの記述と実行。
 - MATLAB コードのスタイルと正確性の評価。
 
-エージェントが MATLAB および Simulink を活用できるようにするために、[MATLAB Agentic Toolkit (GitHub)](https://github.com/matlab/matlab-agentic-toolkit) および [Simulink Agentic Toolkit (GitHub)](https://github.com/matlab/simulink-agentic-toolkit) のスキルを使用できます。これらのツールキットを使用して、本 MCP サーバーをインストールすることもできます。
+Claude Code®、GitHub® Copilot CLI、または OpenAI® Codex を使用している場合、MathWorks では [Agentic Toolkit Installer (GitHub)](https://github.com/matlab/agentic-toolkit-installer) を使用して本 MCP サーバーをインストールすることを推奨しています。これは、これらの AI コーディング エージェントで MATLAB および Simulink を使用するための構成を行う最も簡単な方法です。
+
+それ以外の場合は、「[手動セットアップ](#手動セットアップ)」の手順に従って本 MCP サーバーを手動でインストールできます。
 
 ## 目次
 
-- [セットアップ](#セットアップ)
+- [手動セットアップ](#手動セットアップ)
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [Visual Studio Code の GitHub Copilot](#visual-studio-code-の-github-copilot)
@@ -38,7 +40,9 @@ MathWorks® 公式の MATLAB MCP Server を使用して、AI アプリケーシ�
 - [ライセンスと使用について](#ライセンスと使用について)
 - [サポートへのお問い合わせ](#サポートへのお問い合わせ)
 
-## セットアップ
+## 手動セットアップ
+
+[Agentic Toolkit Installer (GitHub)](https://github.com/matlab/agentic-toolkit-installer) を使用せずに MATLAB MCP Server を手動でセットアップするには、以下の手順に従います。
 
 1. [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) R2021a 以降をインストールし、システム パスに追加します。
 1. 本サーバーは Model Context Protocol を使用するすべての AI アプリケーションをサポートしています。Claude Desktop 用に MATLAB MCP Server をセットアップする場合は、「[Claude Desktop](#claude-desktop)」の手順に進んでください。その他のアプリケーション用にサーバーをセットアップする場合は、以下の手順に従います。
@@ -152,7 +156,7 @@ codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-
 | initialize-matlab-on-startup | サーバーの起動と同時に MATLAB を初期化するには、この引数を `true` に設定します。既定では、最初のツールが呼び出されたときにのみ MATLAB が起動します。 | `--initialize-matlab-on-startup=true` |
 | initial-working-folder | MATLAB の起動フォルダーを指定します。値を指定しない場合、MATLAB は AI アプリケーションの最初の[ルート (MCP)](https://modelcontextprotocol.io/specification/latest/client/roots) のパスで起動します。ルートが定義されていない場合、MATLAB は次の場所で起動します。 <br> <ul><li>Linux: `/home/username` </li><li> Windows: `C:\Users\username\Documents`</li><li>Mac: `/Users/username/Documents`</li></ul> | Windows: `--initial-working-folder=C:\\Users\\username\\MyProject` <br><br> Linux/macOS: `--initial-working-folder=/Users/username/MyProject` |
 | matlab-display-mode | MATLAB デスクトップを表示するかどうかを指定します。`desktop` モード (既定) では MATLAB デスクトップが表示されます。`nodesktop` モードでは、MATLAB デスクトップを使用せずに AI アプリケーションでのみ MATLAB を使用します。ただし、`nodesktop` モードでも、グラフィカル インターフェイスを必要とするコマンド (`edit`、`open`、`open_system`、`uifigure`、`appdesigner` など) の場合はデスクトップ上に MATLAB ウィンドウが開きます。 | `--matlab-display-mode=nodesktop` |
-| matlab-session-mode | MCP サーバーが新しい MATLAB を起動するか、既存の MATLAB セッションに接続 (MATLAB R2023a 以降でサポート) するかを指定します。既定は **`auto`** モードです。<br><br>**`new` モード:** MCP サーバーが新しい MATLAB セッションを起動します。<br><br>**`auto` モード (既定):** サーバーは既存の MATLAB セッションへの接続を試みます。既存のセッションを使用するには、以下の手順で `existing` モードを事前に設定しておく必要があります。既存の MATLAB セッションが見つからない場合は、サーバーは新しいセッションを起動します。<br><br>**`existing` モード:** サーバーは既存の MATLAB セッションへの接続を試みます。このモードを引数 `matlab-root`、`initial-working-folder`、または `matlab-display-mode` と組み合わせて使用しないでください。このモードを使用するには、以下の手順で事前に MATLAB セッションを設定しておく必要があります。<br><br><ol><li>初めて `existing` モードを使用する場合は、`./matlab-mcp-server --setup-matlab` を実行します。<br><br>このコマンドにより、MATLAB MCP Server Toolbox という名前のアドオンが MATLAB にインストールされます。このテーブルの他の引数を使用してコマンドをカスタマイズできます。たとえば、ツールボックスのインストールに使用する MATLAB を指定するには、`./matlab-mcp-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a` を使用できます。<br><br>Claude Desktop の場合、`./matlab-mcp-server --setup-matlab` を実行する前に、「[セットアップ](#セットアップ)」の手順に従って MATLAB MCP Server バイナリをダウンロードする必要があります。<br><br></li><li>実行中の MATLAB セッションのコマンド ウィンドウで `shareMATLABSession()` を実行します。`--matlab-session-mode=existing` または `--matlab-session-mode=auto` を指定してサーバーを起動すると、MCP サーバーはこの MATLAB に接続します。複数の MATLAB セッションを実行している場合、サーバーは最後に `shareMATLABSession()` コマンドを実行した MATLAB セッションに接続します。<br><br>`shareMATLABSession()` を手動で実行する代わりに、MATLAB の[スタートアップ スクリプト (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html) にこのコマンドを追加できます。</li></ol> | `--matlab-session-mode=existing` |
+| matlab-session-mode | MCP サーバーが新しい MATLAB を起動するか、既存の MATLAB セッションに接続 (MATLAB R2023a 以降でサポート) するかを指定します。既定は **`auto`** モードです。<br><br>**`new` モード:** MCP サーバーが新しい MATLAB セッションを起動します。<br><br>**`auto` モード (既定):** サーバーは既存の MATLAB セッションへの接続を試みます。既存のセッションを使用するには、以下の手順で `existing` モードを事前に設定しておく必要があります。既存の MATLAB セッションが見つからない場合は、サーバーは新しいセッションを起動します。<br><br>**`existing` モード:** サーバーは既存の MATLAB セッションへの接続を試みます。このモードを引数 `matlab-root`、`initial-working-folder`、または `matlab-display-mode` と組み合わせて使用しないでください。このモードを使用するには、以下の手順で事前に MATLAB セッションを設定しておく必要があります。<br><br><ol><li>初めて `existing` モードを使用する場合は、`./matlab-mcp-server --setup-matlab` を実行します。<br><br>このコマンドにより、MATLAB MCP Server Toolbox という名前のアドオンが MATLAB にインストールされます。このテーブルの他の引数を使用してコマンドをカスタマイズできます。たとえば、ツールボックスのインストールに使用する MATLAB を指定するには、`./matlab-mcp-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a` を使用できます。<br><br>Claude Desktop の場合、`./matlab-mcp-server --setup-matlab` を実行する前に、「[手動セットアップ](#手動セットアップ)」の手順に従って MATLAB MCP Server バイナリをダウンロードする必要があります。<br><br></li><li>実行中の MATLAB セッションのコマンド ウィンドウで `shareMATLABSession()` を実行します。`--matlab-session-mode=existing` または `--matlab-session-mode=auto` を指定してサーバーを起動すると、MCP サーバーはこの MATLAB に接続します。複数の MATLAB セッションを実行している場合、サーバーは最後に `shareMATLABSession()` コマンドを実行した MATLAB セッションに接続します。<br><br>`shareMATLABSession()` を手動で実行する代わりに、MATLAB の[スタートアップ スクリプト (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html) にこのコマンドを追加できます。</li></ol> | `--matlab-session-mode=existing` |
 | extension-file | カスタム MCP ツールを使用するには、ツールを定義する JSON ファイルのパスを指定します。複数の拡張ファイルを使用することもできます。カスタム ツールの使用の詳細については、「[MATLAB MCP Server でのカスタム ツールの使用](guides/custom-tools.ja.md)」を参照してください。 | <br><br>Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` <br><br> **複数の拡張ファイルを使用する場合:**<br><br>Windows:`--extension-file=C:\\path\\to\\tools-1.json --extension-file=C:\\path\\to\\tools-2.json`<br><br>Linux/macOS:`--extension-file=/path/to/tools1.json --extension-file=/path/to/tools2.json` <br><br> **環境変数を使用する場合:** <br><br> Windows: `MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\tools1.json;C:\Users\name\tools2.json` <br><br> Linux/macOS: `MW_MCP_SERVER_EXTENSION_FILE=/path/to/tools1.json:/path/to/tools2.json` |
 | log-folder | MCP サーバーがログ ファイルを保存するフォルダーを指定します。指定しない場合、サーバーはオペレーティング システムの既定の一時フォルダーを使用します。 | Windows: `--log-folder=C:\\Users\\name\\AppData\\Local\\Temp` <br><br> Linux/macOS: `--log-folder=/tmp/my-logs` |
 | log-level | MCP サーバーのログ レベル。有効な値は、詳細度の高い順に `debug`、`info`、`warn`、`error` です。既定は `info` です。 | `--log-level=debug` |
@@ -175,14 +179,14 @@ codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-
         - `project_path` (string): プロジェクト ディレクトリの絶対パス。MATLAB はこのディレクトリを現在の作業フォルダーとして設定します。例: `C:\Users\username\matlab-project` または `/home/user/research`。
 
 1. `run_matlab_file`
-    - MATLAB スクリプトを実行し、出力を返します。スクリプトは有効な `.m` ファイルである必要があります。
+    - MATLAB スクリプトを実行し、出力を返します。スクリプトは有効な MATLAB ソース ファイル (`.m`) または P コード ファイル (`.p`) である必要があります。MATLAB ソース ファイル (`.m`) と P コード ファイル (`.p`) が同じ名前で同じフォルダーにある場合、MATLAB は `.p` ファイルを実行します。
     - 入力:
-        - `script_path` (string): 実行する MATLAB スクリプト ファイルの絶対パス。有効な `.m` ファイルである必要があります。例: `C:\Users\username\projects\analysis.m` または `/home/user/matlab/simulation.m`。
+        - `script_path` (string): 実行する MATLAB スクリプト ファイルの絶対パス。有効な MATLAB ソース ファイル (`.m`) または P コード ファイル (`.p`) である必要があります。例: `C:\Users\username\projects\analysis.m` または `/home/user/matlab/simulation.m`。
 
 1. `run_matlab_test_file`
     - MATLAB テスト スクリプトを実行し、包括的なテスト結果を返します。MATLAB テスト フレームワークの規則に従った MATLAB ユニット テスト ファイル用に設計されています。
     - 入力:
-        - `script_path` (string): MATLAB テスト スクリプト ファイルの絶対パス。MATLAB ユニット テストを含む有効な `.m` ファイルである必要があります。例: `C:\Users\username\tests\testMyFunction.m` または `/home/user/matlab/tests/test_analysis.m`。
+        - `script_path` (string): MATLAB テスト スクリプト ファイルの絶対パス。MATLAB ユニット テストを含む有効な MATLAB ソース ファイル (`.m`) または P コード ファイル (`.p`) である必要があります。例: `C:\Users\username\tests\testMyFunction.m` または `/home/user/matlab/tests/test_analysis.m`。
 
 ## リソース
 

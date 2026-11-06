@@ -2,7 +2,7 @@
 Source English Markdown:
 - File: ./README.md
 - Branch: main
-- Commit: debacb748288e357e5ecb5f8ef4fb81b7240c138
+- Commit: 659e225db68cda8b143b9c8bcf4d2b1b38d4116d
 -->
 
 # MATLAB MCP Server
@@ -21,11 +21,13 @@ MathWorks®의 공식 MATLAB MCP Server를 사용하여 AI 애플리케이션에
 - MATLAB 코드를 작성하고 실행합니다.
 - MATLAB 코드의 스타일과 정확성을 평가합니다.
 
-[MATLAB Agentic Toolkit (GitHub)](https://github.com/matlab/matlab-agentic-toolkit)과 [Simulink Agentic Toolkit (GitHub)](https://github.com/matlab/simulink-agentic-toolkit)의 스킬을 사용하면 에이전트가 MATLAB과 Simulink를 사용하는 데 도움을 줄 수 있으며, 이들 툴킷은 이 MCP 서버를 대신 설치해 줄 수도 있습니다.
+Claude Code®, GitHub® Copilot CLI 또는 OpenAI® Codex를 사용하는 경우 MathWorks는 [Agentic Toolkit Installer (GitHub)](https://github.com/matlab/agentic-toolkit-installer)를 사용하여 이 MCP 서버를 설치할 것을 권장합니다. 이것이 AI 코딩 에이전트에서 MATLAB과 Simulink를 사용할 수 있도록 구성하는 가장 간편한 방법입니다.
+
+그렇지 않은 경우 [수동 설정](#수동-설정)의 지침에 따라 이 MCP 서버를 수동으로 설치할 수 있습니다.
 
 ## 목차
 
-- [설정](#설정)
+- [수동 설정](#수동-설정)
   - [Claude Code](#claude-code)
   - [Claude Desktop](#claude-desktop)
   - [Visual Studio Code의 GitHub Copilot](#visual-studio-code의-github-copilot)
@@ -38,7 +40,9 @@ MathWorks®의 공식 MATLAB MCP Server를 사용하여 AI 애플리케이션에
 - [라이선스 및 사용](#라이선스-및-사용)
 - [지원 문의](#지원-문의)
 
-## 설정
+## 수동 설정
+
+[Agentic Toolkit Installer (GitHub)](https://github.com/matlab/agentic-toolkit-installer)를 사용하지 않고 MATLAB MCP Server를 수동으로 설정하려면 다음 지침을 따르십시오.
 
 1. [MATLAB (MathWorks)](https://www.mathworks.com/help/install/ug/install-products-with-internet-connection.html) R2021a 이상을 설치하고 시스템 PATH에 추가하십시오.
 1. 본 서버는 모델 컨텍스트 프로토콜(Model Context Protocol)을 사용하는 모든 AI 애플리케이션을 지원합니다. Claude Desktop용 MATLAB MCP Server를 설정하려면 [Claude Desktop](#claude-desktop)의 지침으로 건너뛰십시오. 다른 애플리케이션용 서버를 설정하려면 다음 지침을 따르십시오.
@@ -152,7 +156,7 @@ codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-
 | initialize-matlab-on-startup | 서버를 시작하자마자 MATLAB을 초기화하려면 이 인수를 `true`로 설정하십시오. 기본적으로 MATLAB은 첫 번째 툴이 호출될 때만 시작됩니다. | `--initialize-matlab-on-startup=true` |
 | initial-working-folder | MATLAB이 시작되는 폴더를 지정합니다. 값을 지정하지 않으면 MATLAB은 AI 애플리케이션의 첫 번째 [Root (MCP)](https://modelcontextprotocol.io/specification/latest/client/roots) 경로에서 시작됩니다. 루트를 정의하지 않은 경우 MATLAB은 다음 위치에서 시작됩니다. <br> <ul><li>Linux: `/home/username` </li><li> Windows: `C:\Users\username\Documents`</li><li>Mac: `/Users/username/Documents`</li></ul> | Windows: `--initial-working-folder=C:\\Users\\username\\MyProject` <br><br> Linux/macOS: `--initial-working-folder=/Users/username/MyProject` |
 | matlab-display-mode | MATLAB 데스크탑 표시 여부를 지정합니다. MATLAB 데스크탑을 표시하려면 `desktop` 모드(기본값)를 사용하십시오. MATLAB 데스크탑 없이 AI 애플리케이션에서만 MATLAB을 사용하려면 `nodesktop` 모드를 사용하십시오. `nodesktop` 모드에서도 그래픽 인터페이스가 필요한 명령(예: `edit`, `open`, `open_system`, `uifigure`, `appdesigner`)은 데스크탑에 MATLAB 창을 엽니다. | `--matlab-display-mode=nodesktop` |
-| matlab-session-mode | MCP 서버가 새 MATLAB을 시작할지 기존 MATLAB 세션에 연결할지 지정합니다(MATLAB R2023a 이상 지원). 기본값은 **`auto`** 모드입니다.<br><br> **`new` 모드:** MCP 서버가 새 MATLAB 세션을 시작합니다. <br><br>**`auto` 모드(기본값):** 서버가 아래 지침을 사용하여 `existing` 모드용으로 구성한 기존 MATLAB 세션에 연결을 시도합니다. 기존 MATLAB 세션을 찾을 수 없으면 새 세션을 시작합니다. <br><br>**`existing` 모드:** 서버가 기존 MATLAB 세션에 연결을 시도합니다. 이 모드를 인수 `matlab-root`, `initial-working-folder` 또는 `matlab-display-mode`와 함께 사용하지 마십시오. 이 모드를 사용하려면 다음 단계에 따라 MATLAB 세션을 사전에 구성해야 합니다.<br><br><ol><li>`existing` 모드를 처음 사용하는 경우 `./matlab-mcp-server --setup-matlab`을 실행하십시오.<br><br>이 명령은 MATLAB에 MATLAB MCP Server Toolbox라는 애드온을 설치합니다. 이 표의 다른 인수로 명령을 사용자 지정할 수 있습니다. 예를 들어 툴박스를 설치할 MATLAB을 지정하려면 `./matlab-mcp-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a`를 사용할 수 있습니다.<br><br>Claude Desktop의 경우 `./matlab-mcp-server --setup-matlab`을 실행하기 전에 [설정](#설정)의 지침을 사용하여 MATLAB MCP Server 바이너리를 다운로드해야 합니다.<br><br></li><li>실행 중인 MATLAB 세션의 명령 창에서 `shareMATLABSession()`을 실행하십시오. `--matlab-session-mode=existing` 또는 `--matlab-session-mode=auto`로 서버를 시작하면 MCP 서버가 이 MATLAB에 연결됩니다. 여러 MATLAB 세션을 실행 중인 경우 서버는 `shareMATLABSession()` 명령을 가장 최근에 실행한 MATLAB 세션에 연결됩니다.<br><br>`shareMATLABSession()`을 수동으로 실행하는 대신 MATLAB [시작 스크립트 (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html)에 이 명령을 추가할 수 있습니다.</li></ol> | `--matlab-session-mode=existing` |
+| matlab-session-mode | MCP 서버가 새 MATLAB을 시작할지 기존 MATLAB 세션에 연결할지 지정합니다(MATLAB R2023a 이상 지원). 기본값은 **`auto`** 모드입니다.<br><br> **`new` 모드:** MCP 서버가 새 MATLAB 세션을 시작합니다. <br><br>**`auto` 모드(기본값):** 서버가 아래 지침을 사용하여 `existing` 모드용으로 구성한 기존 MATLAB 세션에 연결을 시도합니다. 기존 MATLAB 세션을 찾을 수 없으면 새 세션을 시작합니다. <br><br>**`existing` 모드:** 서버가 기존 MATLAB 세션에 연결을 시도합니다. 이 모드를 인수 `matlab-root`, `initial-working-folder` 또는 `matlab-display-mode`와 함께 사용하지 마십시오. 이 모드를 사용하려면 다음 단계에 따라 MATLAB 세션을 사전에 구성해야 합니다.<br><br><ol><li>`existing` 모드를 처음 사용하는 경우 `./matlab-mcp-server --setup-matlab`을 실행하십시오.<br><br>이 명령은 MATLAB에 MATLAB MCP Server Toolbox라는 애드온을 설치합니다. 이 표의 다른 인수로 명령을 사용자 지정할 수 있습니다. 예를 들어 툴박스를 설치할 MATLAB을 지정하려면 `./matlab-mcp-server --setup-matlab --matlab-root=/home/usr/MATLAB/R2026a`를 사용할 수 있습니다.<br><br>Claude Desktop의 경우 `./matlab-mcp-server --setup-matlab`을 실행하기 전에 [수동 설정](#수동-설정)의 지침을 사용하여 MATLAB MCP Server 바이너리를 다운로드해야 합니다.<br><br></li><li>실행 중인 MATLAB 세션의 명령 창에서 `shareMATLABSession()`을 실행하십시오. `--matlab-session-mode=existing` 또는 `--matlab-session-mode=auto`로 서버를 시작하면 MCP 서버가 이 MATLAB에 연결됩니다. 여러 MATLAB 세션을 실행 중인 경우 서버는 `shareMATLABSession()` 명령을 가장 최근에 실행한 MATLAB 세션에 연결됩니다.<br><br>`shareMATLABSession()`을 수동으로 실행하는 대신 MATLAB [시작 스크립트 (MathWorks)](https://www.mathworks.com/help/matlab/ref/startup.html)에 이 명령을 추가할 수 있습니다.</li></ol> | `--matlab-session-mode=existing` |
 | extension-file | 사용자 지정 MCP 툴을 사용하려면 툴을 정의하는 JSON 파일의 경로를 제공하십시오. 여러 확장 파일을 사용할 수도 있습니다. 사용자 지정 툴 사용에 대한 자세한 내용은 [MATLAB MCP Server에서 사용자 지정 툴 사용하기](guides/custom-tools.ko.md)를 참조하십시오. | <br><br>Windows: `--extension-file=C:\\Users\\name\\my-tools.json` <br><br> Linux/macOS: `--extension-file=/path/to/my-tools.json` <br><br> **여러 확장 파일 사용:**<br><br>Windows:`--extension-file=C:\\path\\to\\tools-1.json --extension-file=C:\\path\\to\\tools-2.json`<br><br>Linux/macOS:`--extension-file=/path/to/tools1.json --extension-file=/path/to/tools2.json` <br><br> **환경 변수 사용:** <br><br> Windows: `MW_MCP_SERVER_EXTENSION_FILE=C:\Users\name\tools1.json;C:\Users\name\tools2.json` <br><br> Linux/macOS: `MW_MCP_SERVER_EXTENSION_FILE=/path/to/tools1.json:/path/to/tools2.json` |
 | log-folder | MCP 서버가 로그 파일을 저장하는 폴더를 지정합니다. 지정하지 않으면 서버는 운영 체제의 기본 임시 폴더를 사용합니다. | Windows: `--log-folder=C:\\Users\\name\\AppData\\Local\\Temp` <br><br> Linux/macOS: `--log-folder=/tmp/my-logs`  |
 | log-level | MCP 서버의 로그 수준입니다. 유효한 값은 세부 정보가 자세한 순서대로 `debug`, `info`, `warn`, `error`입니다. 기본값은 `info`입니다. | `--log-level=debug` |
@@ -175,14 +179,14 @@ codex mcp add matlab -- /fullpath/to/matlab-mcp-server-binary --initial-working-
         - `project_path` (string): 프로젝트 디렉터리의 절대 경로입니다. MATLAB이 이 디렉터리를 현재 작업 폴더로 설정합니다. 예: `C:\Users\username\matlab-project` 또는 `/home/user/research`.
 
 1. `run_matlab_file`
-    - MATLAB 스크립트를 실행하고 출력을 반환합니다. 스크립트는 유효한 `.m` 파일이어야 합니다.
+    - MATLAB 스크립트를 실행하고 출력을 반환합니다. 스크립트는 유효한 MATLAB 소스 파일(`.m`) 또는 P-code 파일(`.p`)이어야 합니다. MATLAB 소스 파일(`.m`)과 P-code 파일(`.p`)의 이름이 같고 같은 폴더에 있으면 MATLAB은 `.p` 파일을 실행합니다.
     - 입력값:
-        - `script_path` (string): 실행할 MATLAB 스크립트 파일의 절대 경로입니다. 유효한 `.m` 파일이어야 합니다. 예: `C:\Users\username\projects\analysis.m` 또는 `/home/user/matlab/simulation.m`.
+        - `script_path` (string): 실행할 MATLAB 스크립트 파일의 절대 경로입니다. 유효한 MATLAB 소스 파일(`.m`) 또는 P-code 파일(`.p`)이어야 합니다. 예: `C:\Users\username\projects\analysis.m` 또는 `/home/user/matlab/simulation.m`.
 
 1. `run_matlab_test_file`
     - MATLAB 테스트 스크립트를 실행하고 포괄적인 테스트 결과를 반환합니다. MATLAB 테스트 프레임워크 규칙을 따르는 MATLAB 단위 테스트 파일용으로 설계되었습니다.
     - 입력값:
-        - `script_path` (string): MATLAB 테스트 스크립트 파일의 절대 경로입니다. MATLAB 단위 테스트가 포함된 유효한 `.m` 파일이어야 합니다. 예: `C:\Users\username\tests\testMyFunction.m` 또는 `/home/user/matlab/tests/test_analysis.m`.
+        - `script_path` (string): MATLAB 테스트 스크립트 파일의 절대 경로입니다. MATLAB 단위 테스트가 포함된 유효한 MATLAB 소스 파일(`.m`) 또는 P-code 파일(`.p`)이어야 합니다. 예: `C:\Users\username\tests\testMyFunction.m` 또는 `/home/user/matlab/tests/test_analysis.m`.
 
 ## 리소스
 
