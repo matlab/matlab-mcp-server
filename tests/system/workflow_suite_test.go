@@ -280,13 +280,8 @@ func (s *WorkflowTestSuite) TestSetupMATLABWorkflow() {
 	}
 
 	// Step 2: Run MCP server with --setup-matlab
-	installCmd := exec.CommandContext(ctx, s.mcpServerPath, //nolint:gosec // Trusted path in tests
-		"--setup-matlab",
-	)
-	installCmd.Env = s.defaultEnv
-	installOutput, err := installCmd.CombinedOutput()
-	s.Require().NoError(err, "setup-matlab should succeed:\n%s", string(installOutput))
-	s.Contains(string(installOutput), "Successfully setup MATLAB.", "--setup-matlab should print success message")
+	installOutput := s.runSetupMATLAB(ctx, s.defaultEnv)
+	s.Contains(installOutput, "Successfully setup MATLAB.", "--setup-matlab should print success message")
 
 	// Step 3: Verify the add-on is installed
 	output, err = runMATLAB(checkInstalledCode)

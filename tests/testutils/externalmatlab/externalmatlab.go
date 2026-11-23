@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabstartup"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabtempdir"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +27,6 @@ const (
 
 	commandSucceeded = "done"
 
-	startupTimeout   = 3 * time.Minute
 	commandTimeout   = 1 * time.Minute
 	filePollInterval = 100 * time.Millisecond
 )
@@ -46,6 +46,9 @@ type Instance struct {
 
 func Start(t *testing.T, matlabExe string, env []string, prepCode string) *Instance {
 	t.Helper()
+
+	timeout, err := matlabstartup.Timeout()
+	require.NoError(t, err, "should read the MATLAB startup timeout")
 
 	dir := matlabtempdir.New(t, "external-matlab-")
 	startupDir := filepath.Join(dir, startupDirName)
@@ -77,7 +80,7 @@ func Start(t *testing.T, matlabExe string, env []string, prepCode string) *Insta
 		<-matlab.exited
 	})
 
-	matlab.waitForFile(t, filepath.Join(startupDir, readyFileName), "MATLAB startup", startupTimeout)
+	matlab.waitForFile(t, filepath.Join(startupDir, readyFileName), "MATLAB startup", timeout)
 	matlab.run(t, prepCode, "the preparation code")
 
 	return matlab

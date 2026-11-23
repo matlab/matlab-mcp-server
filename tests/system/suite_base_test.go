@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,7 +15,9 @@ import (
 	"github.com/matlab/matlab-mcp-server/internal/usecases/utils/matlabstring"
 	"github.com/matlab/matlab-mcp-server/tests/system/testdata"
 	"github.com/matlab/matlab-mcp-server/tests/testconfig"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/logs"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/matlablocator"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabstartup"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabtempdir"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpclient"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpserver"
@@ -45,6 +48,201 @@ type SystemTestSuite struct {
 	testDataDir       string
 	pathEnvWithMATLAB string
 	defaultEnv        []string
+}
+
+// SetupSuite runs once before all tests in a suite
+func (s *SystemTestSuite) SetupSuite() {
+	// Get MCP Server binary path
+	mcpServerPath, err := mcpserver.NewLocator().GetPath()
+	s.Require().NoError(err, "Failed to get MCP Server binary path")
+	s.Require().NotEmpty(mcpServerPath, "MCP Server binary path cannot be empty")
+	s.mcpServerPath = mcpServerPath
+
+	// Get MATLAB path
+	matlabPath, err := matlablocator.GetPath()
+	s.Require().NoError(err, "Failed to get MATLAB path")
+	s.Require().NotEmpty(matlabPath, "A non empty MATLAB path is required to run the system tests")
+	s.matlabPath = matlabPath
+
+	// Extract test assets to a temporary directory
+	// This allows the system tests to be self-contained and compiled with the binary
+	testDataDir := matlabtempdir.New(s.T(), "system-test-data-")
+
+	// Extract files from embedded FS
+	err = testdata.CopyToDir(testDataDir)
+	s.Require().NoError(err, "Failed to extract test assets")
+
+	s.testDataDir = testDataDir
+}
+
+// SetupTest runs before each test
+func (s *SystemTestSuite) SetupTest() {
+	s.pathEnvWithMATLAB, s.defaultEnv = s.matlabEnv()
+}
+
+func (s *SystemTestSuite) matlabEnv() (pathWithMATLAB string, envWithMATLAB []string) {
+	path := os.Getenv("PATH")
+	path = pathcontrol.RemoveAllMATLABsFromPath(path)
+	path = pathcontrol.AddToPath(path, []string{s.matlabPath})
+	s.Require().Contains(path, s.matlabPath, "MATLAB directory should be in the PATH environment variable")
+
+	return path, pathcontrol.UpdateEnvEntry(os.Environ(), "PATH", path)
+}
+
+// matlabRoot returns the MATLAB root directory (without /bin)
+// This is needed for the --matlab-root flag
+func (s *SystemTestSuite) matlabRoot() string {
+	// matlabPath is expected to be the bin directory, so get its parent
+	return filepath.Dir(s.matlabPath)
+}
+
+func (s *SystemTestSuite) matlabExe() string {
+	return filepath.Join(s.matlabPath, testconfig.MATLABExeName)
+}
+
+// CreateMCPSession creates an MCP client session with debug logging enabled.
+// The returned session provides helper methods for reading and dumping logs.
+//
+// The caller is responsible for closing the session.
+//
+// Usage:
+//
+//	session := s.CreateMCPSession(ctx, nil, nil)
+//	defer s.CleanupSession(session, assertNoErrorLogs)
+//
+// If env is nil, the suite's defaultEnv is used.
+func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, sessionOpts []mcpclient.CreateSessionOption, args ...string) *SystemSession {
+	if env == nil {
+		env = s.defaultEnv
+	}
+
+	hasLogLevel := false
+	hasLogFolder := false
+	hasSessionMode := false
+	logFolderLocation := ""
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--log-level=") {
+			hasLogLevel = true
+		}
+		if strings.HasPrefix(arg, "--log-folder=") {
+			hasLogFolder = true
+			logFolderLocation = strings.TrimPrefix(arg, "--log-folder=")
+		}
+		if strings.HasPrefix(arg, "--matlab-session-mode=") {
+			hasSessionMode = true
+		}
+	}
+
+	if !hasLogFolder {
+		logFolderLocation = filepath.Join(matlabtempdir.New(s.T(), "mcp-logs-"), "logs")
+		s.Require().NoError(os.MkdirAll(logFolderLocation, 0750), "should create log folder")
+	}
+
+	defaults := make([]string, 0, 3)
+	if !hasLogLevel {
+		defaults = append(defaults, "--log-level=debug")
+	}
+	if !hasLogFolder {
+		defaults = append(defaults, "--log-folder="+logFolderLocation)
+	}
+	if !hasSessionMode {
+		defaults = append(defaults, newSessionMode)
+	}
+	args = append(defaults, args...)
+
+	env, err := matlabstartup.Env(env)
+	s.Require().NoError(err, "should set the MATLAB startup timeout for the server")
+
+	client := mcpclient.NewClient(ctx, s.mcpServerPath, env, args...)
+	mcpSession, err := client.CreateSession(ctx, sessionOpts...)
+	s.Require().NoError(err, "should create MCP session")
+
+	return &SystemSession{
+		MCPClientSession: mcpSession,
+		logDir:           logFolderLocation,
+		logFS:            os.DirFS(logFolderLocation),
+	}
+}
+
+func (s *SystemTestSuite) CleanupSession(session *SystemSession, errorLogs errorLogPolicy) {
+	s.T().Helper()
+	if err := session.Close(); err != nil {
+		s.T().Logf("Ignoring session.Close() error (MCP go-sdk shutdown race): %v", err)
+	}
+	if errorLogs == assertNoErrorLogs {
+		s.AssertNoErrorLogs(session)
+	}
+	session.DumpLogsOnFailure(s.T())
+}
+
+func (s *SystemTestSuite) AssertNoErrorLogs(session *SystemSession) {
+	errorLogs, err := serverlogs.ReadErrorLogs(session.LogFS())
+	s.NoError(err) //nolint:testifylint // assert in defer to avoid FailNow
+	s.Empty(errorLogs, "unexpected ERROR logs in server logs")
+}
+
+func (s *SystemTestSuite) runSetupMATLAB(ctx context.Context, env []string) string {
+	s.T().Helper()
+
+	env, err := matlabstartup.Env(env)
+	s.Require().NoError(err, "should set the MATLAB startup timeout for the server")
+
+	logFolder := matlabtempdir.New(s.T(), "mcp-setup-logs-")
+	cmd := exec.CommandContext(ctx, s.mcpServerPath, //nolint:gosec // Trusted path in tests
+		"--setup-matlab", "--log-level=debug", "--log-folder="+logFolder)
+	cmd.Env = env
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		entries, readErr := logs.ReadEntries(os.DirFS(logFolder), []logs.DumpPattern{
+			{Glob: "server-*.log", Header: "MCP Server Log File"},
+			{Glob: "watchdog-*.log", Header: "MCP Watchdog Log File"},
+		})
+		if readErr != nil {
+			s.T().Logf("Failed to read the setup-matlab logs: %s", readErr.Error())
+		}
+		for _, entry := range entries {
+			s.T().Logf("=== %s (%s) ===\n%s\n=== End %s ===", entry.Header, entry.File, entry.Content, entry.Header)
+		}
+	}
+	s.Require().NoError(err, "setup-matlab should succeed:\n%s", output)
+
+	return string(output)
+}
+
+// Test file paths
+func (s *SystemTestSuite) problematicCodePath() string {
+	return filepath.Join(s.testDataDir, "problematic_code.m")
+}
+
+func (s *SystemTestSuite) testScriptPath() string {
+	return filepath.Join(s.testDataDir, "test_script.m")
+}
+
+func (s *SystemTestSuite) testMathFunctionsPath() string {
+	return filepath.Join(s.testDataDir, "test_math_functions.m")
+}
+
+func (s *SystemTestSuite) testPCodablePath() string {
+	return filepath.Join(s.testDataDir, "test_pcodable.m")
+}
+
+// preparePCodeFiles compiles test_script.m and test_pcodable.m to P-code in a
+// fresh temporary folder and returns the paths of the resulting .p files.
+func (s *SystemTestSuite) preparePCodeFiles(ctx context.Context, session *SystemSession) (scriptPCodePath, testPCodePath string) {
+	s.T().Helper()
+
+	pcodeDir := s.T().TempDir()
+	scriptPCodePath = filepath.Join(pcodeDir, "test_script.p")
+	testPCodePath = filepath.Join(pcodeDir, "test_pcodable.p")
+
+	_, err := session.EvaluateCode(ctx,
+		fmt.Sprintf("pcode('%s', '%s')",
+			matlabstring.EscapeSingleQuotes(s.testScriptPath()), matlabstring.EscapeSingleQuotes(s.testPCodablePath())), pcodeDir)
+	s.Require().NoError(err, "should compile p-code files")
+	s.Require().FileExists(scriptPCodePath, "pcode should produce a .p script")
+	s.Require().FileExists(testPCodePath, "pcode should produce a .p test file")
+
+	return scriptPCodePath, testPCodePath
 }
 
 type SystemSession struct {
@@ -121,168 +319,4 @@ func (s *SystemSession) DumpLogsOnFailure(t *testing.T) {
 			}
 		}
 	}
-}
-
-func (s *SystemTestSuite) AssertNoErrorLogs(session *SystemSession) {
-	errorLogs, err := serverlogs.ReadErrorLogs(session.LogFS())
-	s.NoError(err) //nolint:testifylint // assert in defer to avoid FailNow
-	s.Empty(errorLogs, "unexpected ERROR logs in server logs")
-}
-
-// SetupSuite runs once before all tests in a suite
-func (s *SystemTestSuite) SetupSuite() {
-	// Get MCP Server binary path
-	mcpServerPath, err := mcpserver.NewLocator().GetPath()
-	s.Require().NoError(err, "Failed to get MCP Server binary path")
-	s.Require().NotEmpty(mcpServerPath, "MCP Server binary path cannot be empty")
-	s.mcpServerPath = mcpServerPath
-
-	// Get MATLAB path
-	matlabPath, err := matlablocator.GetPath()
-	s.Require().NoError(err, "Failed to get MATLAB path")
-	s.Require().NotEmpty(matlabPath, "A non empty MATLAB path is required to run the system tests")
-	s.matlabPath = matlabPath
-
-	// Extract test assets to a temporary directory
-	// This allows the system tests to be self-contained and compiled with the binary
-	testDataDir := matlabtempdir.New(s.T(), "system-test-data-")
-
-	// Extract files from embedded FS
-	err = testdata.CopyToDir(testDataDir)
-	s.Require().NoError(err, "Failed to extract test assets")
-
-	s.testDataDir = testDataDir
-}
-
-// SetupTest runs before each test
-func (s *SystemTestSuite) SetupTest() {
-	s.pathEnvWithMATLAB, s.defaultEnv = s.matlabEnv()
-}
-
-func (s *SystemTestSuite) matlabEnv() (pathWithMATLAB string, envWithMATLAB []string) {
-	path := os.Getenv("PATH")
-	path = pathcontrol.RemoveAllMATLABsFromPath(path)
-	path = pathcontrol.AddToPath(path, []string{s.matlabPath})
-	s.Require().Contains(path, s.matlabPath, "MATLAB directory should be in the PATH environment variable")
-
-	return path, pathcontrol.UpdateEnvEntry(os.Environ(), "PATH", path)
-}
-
-// CreateMCPSession creates an MCP client session with debug logging enabled.
-// The returned session provides helper methods for reading and dumping logs.
-//
-// The caller is responsible for closing the session.
-//
-// Usage:
-//
-//	session := s.CreateMCPSession(ctx, nil, nil)
-//	defer s.CleanupSession(session, assertNoErrorLogs)
-//
-// If env is nil, the suite's defaultEnv is used.
-func (s *SystemTestSuite) CreateMCPSession(ctx context.Context, env []string, sessionOpts []mcpclient.CreateSessionOption, args ...string) *SystemSession {
-	if env == nil {
-		env = s.defaultEnv
-	}
-
-	hasLogLevel := false
-	hasLogFolder := false
-	hasSessionMode := false
-	logFolderLocation := ""
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "--log-level=") {
-			hasLogLevel = true
-		}
-		if strings.HasPrefix(arg, "--log-folder=") {
-			hasLogFolder = true
-			logFolderLocation = strings.TrimPrefix(arg, "--log-folder=")
-		}
-		if strings.HasPrefix(arg, "--matlab-session-mode=") {
-			hasSessionMode = true
-		}
-	}
-
-	if !hasLogFolder {
-		logFolderLocation = filepath.Join(matlabtempdir.New(s.T(), "mcp-logs-"), "logs")
-		s.Require().NoError(os.MkdirAll(logFolderLocation, 0750), "should create log folder")
-	}
-
-	defaults := make([]string, 0, 3)
-	if !hasLogLevel {
-		defaults = append(defaults, "--log-level=debug")
-	}
-	if !hasLogFolder {
-		defaults = append(defaults, "--log-folder="+logFolderLocation)
-	}
-	if !hasSessionMode {
-		defaults = append(defaults, newSessionMode)
-	}
-	args = append(defaults, args...)
-
-	client := mcpclient.NewClient(ctx, s.mcpServerPath, env, args...)
-	mcpSession, err := client.CreateSession(ctx, sessionOpts...)
-	s.Require().NoError(err, "should create MCP session")
-
-	return &SystemSession{
-		MCPClientSession: mcpSession,
-		logDir:           logFolderLocation,
-		logFS:            os.DirFS(logFolderLocation),
-	}
-}
-
-func (s *SystemTestSuite) CleanupSession(session *SystemSession, errorLogs errorLogPolicy) {
-	s.T().Helper()
-	if err := session.Close(); err != nil {
-		s.T().Logf("Ignoring session.Close() error (MCP go-sdk shutdown race): %v", err)
-	}
-	if errorLogs == assertNoErrorLogs {
-		s.AssertNoErrorLogs(session)
-	}
-	session.DumpLogsOnFailure(s.T())
-}
-
-// Test file paths
-func (s *SystemTestSuite) problematicCodePath() string {
-	return filepath.Join(s.testDataDir, "problematic_code.m")
-}
-
-func (s *SystemTestSuite) testScriptPath() string {
-	return filepath.Join(s.testDataDir, "test_script.m")
-}
-
-func (s *SystemTestSuite) testMathFunctionsPath() string {
-	return filepath.Join(s.testDataDir, "test_math_functions.m")
-}
-
-func (s *SystemTestSuite) testPCodablePath() string {
-	return filepath.Join(s.testDataDir, "test_pcodable.m")
-}
-
-// preparePCodeFiles compiles test_script.m and test_pcodable.m to P-code in a
-// fresh temporary folder and returns the paths of the resulting .p files.
-func (s *SystemTestSuite) preparePCodeFiles(ctx context.Context, session *SystemSession) (scriptPCodePath, testPCodePath string) {
-	s.T().Helper()
-
-	pcodeDir := s.T().TempDir()
-	scriptPCodePath = filepath.Join(pcodeDir, "test_script.p")
-	testPCodePath = filepath.Join(pcodeDir, "test_pcodable.p")
-
-	_, err := session.EvaluateCode(ctx,
-		fmt.Sprintf("pcode('%s', '%s')",
-			matlabstring.EscapeSingleQuotes(s.testScriptPath()), matlabstring.EscapeSingleQuotes(s.testPCodablePath())), pcodeDir)
-	s.Require().NoError(err, "should compile p-code files")
-	s.Require().FileExists(scriptPCodePath, "pcode should produce a .p script")
-	s.Require().FileExists(testPCodePath, "pcode should produce a .p test file")
-
-	return scriptPCodePath, testPCodePath
-}
-
-// matlabRoot returns the MATLAB root directory (without /bin)
-// This is needed for the --matlab-root flag
-func (s *SystemTestSuite) matlabRoot() string {
-	// matlabPath is expected to be the bin directory, so get its parent
-	return filepath.Dir(s.matlabPath)
-}
-
-func (s *SystemTestSuite) matlabExe() string {
-	return filepath.Join(s.matlabPath, testconfig.MATLABExeName)
 }

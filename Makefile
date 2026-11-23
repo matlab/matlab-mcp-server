@@ -110,6 +110,7 @@ UNIT_TEST_PKGS := ./internal/... ./pkg/... ./tests/testutils/...
 INTEGRATION_TEST_PKGS := ./tests/integration/...
 FUNCTIONAL_TEST_PKGS := ./tests/functional/...
 SYSTEM_TEST_PKGS := ./tests/system/...
+SYSTEM_TEST_TIMEOUT ?= 120m
 
 # Must stay equal to a substring of startupCode in localmatlabsession.go.
 MATLAB_MCP_PROCESS_MARKER := matlab_mcp.initializeMCP
@@ -205,7 +206,7 @@ ci-functional-tests: ensure-binary-executable
 	go test $(RACE_FLAG) -json -count=1 $(FUNCTIONAL_TEST_PKGS)
 
 ci-system-tests: ensure-binary-executable
-	@$(call RUN_AND_REAP,go test $(RACE_FLAG) -timeout 120m -json -count=1 $(SYSTEM_TEST_PKGS),KILL_LEAKED_MATLABS)
+	@$(call RUN_AND_REAP,go test $(RACE_FLAG) -timeout $(SYSTEM_TEST_TIMEOUT) -json -count=1 $(SYSTEM_TEST_PKGS),KILL_LEAKED_MATLABS)
 
 ci-matlab-system-tests: matlab-system-tests
 

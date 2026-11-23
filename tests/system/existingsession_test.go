@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -130,10 +129,7 @@ func releaseNumber(release string) string {
 
 func (s *ExistingSessionTestSuite) installToolbox() {
 	_, envWithMATLAB := s.matlabEnv()
-	installCmd := exec.CommandContext(s.T().Context(), s.mcpServerPath, "--setup-matlab") //nolint:gosec // Trusted path in tests
-	installCmd.Env = s.isolatedEnv(envWithMATLAB)
-	out, err := installCmd.CombinedOutput()
-	s.Require().NoError(err, "setup-matlab should succeed:\n%s", out)
+	s.runSetupMATLAB(s.T().Context(), s.isolatedEnv(envWithMATLAB))
 }
 
 func (s *ExistingSessionTestSuite) removeSharedSessionFile() {

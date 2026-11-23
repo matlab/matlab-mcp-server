@@ -5,18 +5,19 @@ package system_test
 import (
 	"context"
 	"time"
+
+	"github.com/matlab/matlab-mcp-server/tests/testutils/matlabstartup"
 )
 
 const (
-	matlabStartupTimeout       = 5 * time.Minute
-	interactionStepTimeout     = 30 * time.Second
-	interactiveWorkflowTimeout = 15 * time.Minute
+	interactionStepTimeout      = 30 * time.Second
+	workflowAfterStartupTimeout = 10 * time.Minute
 )
 
 func (s *SystemTestSuite) startInteractiveSession(displayMode string, workingFolder string) (context.Context, *SystemSession, func()) {
 	t := s.T()
 	t.Helper()
-	ctx, abort := context.WithTimeout(t.Context(), interactiveWorkflowTimeout)
+	ctx, abort := context.WithTimeout(t.Context(), s.matlabStartupTimeout()+workflowAfterStartupTimeout)
 	session := s.CreateMCPSession(ctx, nil, nil,
 		"--matlab-session-mode=new",
 		"--matlab-display-mode="+displayMode,
@@ -35,13 +36,23 @@ func (s *SystemTestSuite) startInteractiveSession(displayMode string, workingFol
 	return ctx, session, cleanup
 }
 
+func (s *SystemTestSuite) matlabStartupTimeout() time.Duration {
+	s.T().Helper()
+	timeout, err := matlabstartup.Timeout()
+	s.Require().NoError(err, "should read the MATLAB startup timeout")
+	return timeout
+}
+
 func (s *SystemTestSuite) requireMATLABStarted(ctx context.Context, session *SystemSession) {
 	s.T().Helper()
-	startupCtx, cancel := context.WithTimeout(ctx, matlabStartupTimeout)
+	startupTimeout := s.matlabStartupTimeout()
+	clientTimeout, err := matlabstartup.ClientTimeout()
+	s.Require().NoError(err, "should read the MCP client timeout for MATLAB startup")
+	startupCtx, cancel := context.WithTimeout(ctx, clientTimeout)
 	defer cancel()
 
 	output, err := session.EvaluateCode(startupCtx, `fprintf("MCP_MATLAB_STARTED\n");`)
-	s.Require().NoError(err, "MATLAB should start within %s", matlabStartupTimeout)
+	s.Require().NoError(err, "MATLAB should start within %s", startupTimeout)
 	s.Require().Contains(output, "MCP_MATLAB_STARTED")
 }
 
