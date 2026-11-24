@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/matlab/matlab-mcp-server/tests/testutils/mcpserver"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/pathcontrol"
 	"github.com/matlab/matlab-mcp-server/tests/testutils/serverlogs"
+	"github.com/matlab/matlab-mcp-server/tests/testutils/toolboxcache"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -63,6 +65,7 @@ func (s *SystemTestSuite) SetupSuite() {
 	s.Require().NoError(err, "Failed to get MATLAB path")
 	s.Require().NotEmpty(matlabPath, "A non empty MATLAB path is required to run the system tests")
 	s.matlabPath = matlabPath
+	s.clearToolboxCache()
 
 	// Extract test assets to a temporary directory
 	// This allows the system tests to be self-contained and compiled with the binary
@@ -73,6 +76,20 @@ func (s *SystemTestSuite) SetupSuite() {
 	s.Require().NoError(err, "Failed to extract test assets")
 
 	s.testDataDir = testDataDir
+}
+
+func (s *SystemTestSuite) clearToolboxCache() {
+	if runtime.GOOS != "windows" {
+		return
+	}
+
+	deleted, err := toolboxcache.Clear(os.Getenv("LOCALAPPDATA"), s.matlabRoot())
+	for _, cacheFile := range deleted {
+		s.T().Logf("Deleted the per-user toolbox path cache %s", cacheFile)
+	}
+	if err != nil {
+		s.T().Logf("Kept the per-user toolbox path cache: %v", err)
+	}
 }
 
 // SetupTest runs before each test
