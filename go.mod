@@ -2,7 +2,7 @@ module github.com/matlab/matlab-mcp-server
 
 // Copyright 2025-2026 The MathWorks, Inc.
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/google/jsonschema-go v0.4.2
